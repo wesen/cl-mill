@@ -1,0 +1,29 @@
+X make a pass that collects passes for a specific tool
+  X each pass has current-x etc...
+  X allows to do (with-pass () (drill-steps) (cut-steps) (bridge-steps))
+  X collect steps into passes
+  x named passes
+  X rewrite mill steps to do rel
+  X collect dril and cut stuff
+  X collect passes at end, kind of (with-cnc-program ())
+  X cnc-program class that handles all passes and outputs them into
+    different files
+
+X calculate panel should take all passes in account
+
+X processing recorder ala dxf (beginRaw, endRaw)
+
+- safety zones
+
+X traveling salesman for drills
+
+- reversing movements?
+
+- optimize cube
+
+- caching tracing
+
+- pockets for offset algorithm
+
+- fix raster optimizing algorithm
+  
