@@ -11,13 +11,15 @@
   (max          :double)
   (epsilon      :double))
 
+;; (def-foreign-type potrace-progress-ptr (* potrace-progress))
+
 (def-struct potrace-param
   (turdsize     :int)
   (turnpolicy   :int)
   (alphamax     :double)
   (opticurve    :int)
   (opttolerance :double)
-  (progress     (* potrace-progress)))
+  (progress     (* (:struct potrace-progress))))
 
 (def-foreign-type potrace-word :unsigned-long)
 
@@ -39,12 +41,12 @@
 (def-struct potrace-curve
   (n            :int)
   (tag          (* :int))
-  (c            (* (:array potrace-dpoint 3))))
+  (c            (* (:array (:struct potrace-dpoint) 3))))
 
 (def-struct potrace-path
   (area         :int)
   (sign         :int)
-  (curve        potrace-curve)
+  (curve        (:struct potrace-curve))
   (next         :pointer-self)
   (childlist    :pointer-self)
   (priv         :pointer-void))
@@ -54,7 +56,7 @@
 
 (def-struct potrace-state
   (status       :int)
-  (plist        (* potrace-path))
+  (plist        (* (:struct potrace-path)))
   (priv         :pointer-void))
 
 (def-function ("potrace_param_default" potrace-param-default)
@@ -120,8 +122,8 @@
 
 (defun pot-round (num)
 ;;  (format t "num: ~A num * 1000: ~A~%" num (* num 1000.0))
-  (if (or (sb-ext:float-nan-p num)
-	  (sb-ext:float-infinity-p (* 1000.0 num))
+  (if (or #+sbcl(sb-ext:float-nan-p num)
+	  #+sbcl(sb-ext:float-infinity-p (* 1000.0 num))
 	  (> num most-positive-short-float)
 	  (< num most-negative-short-float))
       num

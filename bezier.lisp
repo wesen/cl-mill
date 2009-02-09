@@ -86,7 +86,10 @@
     (let* ((m (eval-bezier bezier 0.5))
 	   (centre (circle-through-3-points a m b)))
       (if (and centre
-	       (sb-ext:float-nan-p (2d-point-x centre)))
+	       #+sbcl
+	       (sb-ext:float-nan-p (2d-point-x centre))
+	       #-sbcl
+	       nil)
 	  (progn
 	    (warn "NAN centre a1 ~A~%" bezier)
 	    (make-line :a a :b b))
@@ -98,7 +101,10 @@
     (let* ((centre (bezier-biarc bezier)))
 ;;      (format t "centre; ~A~%" centre)
       (if (and centre
-	       (sb-ext:float-nan-p (2d-point-x centre)))
+	       #+sbcl
+	       (sb-ext:float-nan-p (2d-point-x centre))
+	       #-sbcl
+	       nil)
 	  (progn (warn "NAN centre ~A~%" bezier)
 		 (make-line :a a :b b))
 	  (if centre
