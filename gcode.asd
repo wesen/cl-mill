@@ -12,23 +12,32 @@
   :depends-on (:cl-gd :uffi :cocoahelper :lispbuilder-sdl :unit-test :cl-pdf)
   :components
   (
+   ;; thirdparty
    (:file "infpre")
+   (:file "parse-float")
 
+   ;; init
    (:file "package")
    (:file "helpers")
    (:file "init")
 
+   ;; math stuff
    (:file "geometry")
    (:file "arc")
    (:file "bezier")
    (:file "offset")
 
+   ;; potrace externals
    (:file "pot-uffi")
+
+   ;; gcode
    (:file "gcode")
    (:file "opcodes")
 
+   ;; tracer
    (:file "potrace")
 
+   ;; panelizing and stuff
    (:file "shapes")
    (:file "moves")
    (:file "panel")
@@ -36,14 +45,16 @@
 
    (:file "raster")
 
-
+   ;; optimizer
    (:file "optimize")
+
+   ;; eagle import
    (:file "drill")
 
+   ;; formats and exporters and importers
    (:file "sdl")
-
    (:file "p5")
-
    (:file "pdf")
+   (:file "svg")
 
    ))

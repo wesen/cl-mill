@@ -106,7 +106,7 @@
 (defun frontplate-element (&key name package x y angle)
   (with-named-pass ("frontplate")
     (cond ((string= package "3FTL06")
-	   (drill :x x :y y :diameter 10 :depth *frontplate-depth*))
+	   (drill :x x :y y :diameter 10.5 :depth *frontplate-depth*))
 	  ((string= package "CI-11")
 	   (drill :x x :y y :diameter 7.5 :depth *frontplate-depth*))
 	  ((string= package "LED5MM")
@@ -166,14 +166,15 @@
 	  (goto-abs :z *fly-height*)))
       
       (with-tool (tool)
-	(with-transform ((translation-matrix 2.5 -2))
+	(with-transform ((translation-matrix 2.5 -2.5))
 	  (with-transform ((translation-matrix 90 0))
 	    (with-transform ((rotation-matrix -90))
 	      (with-transform ((translation-matrix 5 3))
 		(load-file "/Users/manuel/siff-svn/ruinwesen/eagle/midicommand/minicommand-ioboard.lisp")))))
 	
 	(with-named-pass ("umrandung")
-	  (goto-abs :x 0 :y -2)
+	  (goto-abs :x 0 :y -2
+		    )
 	  (rectangle-inline 95 120 :depth 4)))
 
 
