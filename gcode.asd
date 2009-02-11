@@ -9,15 +9,15 @@
   :version "0.1"
   :maintainer "Manuel Odendahl <wesen@ruinwesen.com>"
   :serial t
-  :depends-on (:cl-gd :uffi :cocoahelper :lispbuilder-sdl :unit-test :cl-pdf)
+  :depends-on (:cl-gd :uffi :cocoahelper :lispbuilder-sdl :unit-test :cl-pdf :cxml)
   :components
   (
    ;; thirdparty
    (:file "infpre")
-   (:file "parse-float")
-
    ;; init
    (:file "package")
+   (:file "atof")
+
    (:file "helpers")
    (:file "init")
 

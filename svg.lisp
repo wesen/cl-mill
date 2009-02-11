@@ -128,102 +128,120 @@
   (let ((p3 (point-- p2 p1)))
     (point-+ p2 p3)))
 
+(defun update-svg-current (x y)
+  (setf *svg-current-x* x
+	*svg-current-y* y))
+
+(defun update-svg-subpath (x y)
+  (setf *svg-subpath-x* x
+	*svg-subpath-y* y))
+
+(defun update-svg-prev-ctrl (x y)
+  (setf *svg-prev-ctrl-x* x
+	*svg-prev-ctrl-y* y))
+
+(defun svg-relative-x (x)
+  (+ *svg-current-x* x))
+
+(defun svg-relative-y (y)
+  (+ *svg-current-y* (- y)))
+
+(defun svg-absolute-x (x)
+  x)
+
+(defun svg-absolute-y (y)
+  (- y))
+
+(defun interpret-svg-moveto (x y)
+  (update-svg-current x y)
+  (update-svg-subpath x y)
+  nil)
+
+(defun interpret-svg-curveto (ux uy vx vy bx by)
+  (prog1
+      (make-bezier :a (2dp *svg-current-x* *svg-current-y*)
+		   :u (2dp ux uy)
+		   :v (2dp vx vy)
+		   :b (2dp bx by))
+    (update-svg-current bx by)
+    (update-svg-prev-ctrl vx vy)))
+
+(defun interpret-svg-smoothcurveto (vx vy bx by)
+  (prog1
+      (make-bezier :a (2dp *svg-current-x* *svg-current-y*)
+		   :u (mirror-point
+		       (2dp *svg-prev-ctrl-x* *svg-prev-ctrl-y*)
+		       (2dp *svg-current-x* *svg-current-y*))
+		   :v (2dp vx vy)
+		   :b (2dp bx by))
+    (update-svg-current bx by)
+    (update-svg-prev-ctrl vx vy)))
+
+(defun interpret-svg-lineto (bx by)
+  (prog1 (make-line :a (2dp *svg-current-x* *svg-current-y*)
+		    :b (2dp bx by))
+    (update-svg-current bx by)))
+  
+
 (defun interpret-svg-path-move (cmd args)
   (cond ((string= cmd "M")
-	 (setf *svg-current-x* (first args)
-	       *svg-current-y* (second args)
-	       *svg-subpath-x* (first args)
-	       *svg-subpath-y* (second args))
-	 nil)
+	 (interpret-svg-moveto (svg-absolute-x (first args))
+			       (svg-absolute-y (second args))))
+
 	((string= cmd "m")
-	 (incf *svg-current-x* (first args))
-	 (incf *svg-current-y* (second args))
-	 (setf *svg-subpath-x* *svg-current-x*
-	       *svg-subpath-y* *svg-current-y*)
-	 nil)
+	 (interpret-svg-moveto (svg-relative-x (first args))
+			       (svg-relative-y (second args))))
+
 	((string= cmd "C")
-	 (prog1
-	     (make-bezier :a (2dp *svg-current-x* *svg-current-y*)
-			  :u (2dp (first args) (second args))
-			  :v (2dp (third args) (fourth args))
-			  :b (2dp (fifth args) (sixth args)))
-	   (setf *svg-current-x* (fifth args)
-		 *svg-current-y* (sixth args)
-		 *svg-prev-ctrl-x* (third args)
-		 *svg-prev-ctrl-y* (fourth args))))
+	 (interpret-svg-curveto (svg-absolute-x (first args))
+				(svg-absolute-y (second args))
+				(svg-absolute-x (third args))
+				(svg-absolute-y (fourth args))
+				(svg-absolute-x (fifth args))
+				(svg-absolute-y (sixth args))))
+						
 	((string= cmd "c")
-	 (prog1
-	     (make-bezier :a (2dp *svg-current-x* *svg-current-y*)
-			  :u (2dp (+ *svg-current-x* (first args))
-				  (+ *svg-current-y* (second args)))
-			  :v (2dp (+ *svg-current-x* (third args))
-				  (+ *svg-current-y* (fourth args)))
-			  :b (2dp (+ *svg-current-x* (fifth args))
-				  (+ *svg-current-y* (sixth args))))
-	   (setf *svg-prev-ctrl-x* (+ *svg-current-x* (third args))
-		 *svg-prev-ctrl-y* (+ *svg-current-y* (fourth args)))
-	   (incf *svg-current-x* (fifth args))
-	   (incf *svg-current-y* (sixth args))))
+	 (interpret-svg-curveto (svg-relative-x (first args))
+				(svg-relative-y (second args))
+				(svg-relative-x (third args))
+				(svg-relative-y (fourth args))
+				(svg-relative-x (fifth args))
+				(svg-relative-y (sixth args))))
+
 	((string= cmd "S")
-	 (prog1
-	     (make-bezier :a (2dp *svg-current-x* *svg-current-y*)
-			  :u (mirror-point
-			      (2dp *svg-prev-ctrl-x* *svg-prev-ctrl-y*)
-			      (2dp *svg-current-x* *svg-current-y*))
-			  :v (2dp (first args) (second args))
-			  :b (2dp (third args) (fourth args)))
-	   (setf *svg-prev-ctrl-x* (first args)
-		 *svg-prev-ctrl-y* (second args)
-		 *svg-current-x* (third args)
-		 *svg-current-y* (fourth args))))
+	 (interpret-svg-smoothcurveto (svg-absolute-x (first args))
+				      (svg-absolute-y (second args))
+				      (svg-absolute-x (third args))
+				      (svg-absolute-y (fourth args))))
 	((string= cmd "s")
-	 (prog1
-	     (make-bezier :a (2dp *svg-current-x* *svg-current-y*)
-			  :u (mirror-point
-			      (2dp *svg-prev-ctrl-x* *svg-prev-ctrl-y*)
-			      (2dp *svg-current-x* *svg-current-y*))
-			  :v (2dp (+ *svg-current-x* (first args))
-				  (+ *svg-current-y* (second args)))
-			  :b (2dp (+ *svg-current-x* (third args))
-				  (+ *svg-current-y* (fourth args))))
-	   (setf *svg-prev-ctrl-x* (+ *svg-current-x* (first args))
-		 *svg-prev-ctrl-y* (+ *svg-current-y* (second args))
-		 *svg-current-x* (+ *svg-current-x* (third args))
-		 *svg-current-y* (+ *svg-current-y* (fourth args)))))
+	 (interpret-svg-smoothcurveto (svg-relative-x (first args))
+				      (svg-relative-y (second args))
+				      (svg-relative-x (third args))
+				      (svg-relative-y (fourth args))))
+
 	((string= cmd "L")
-	 (prog1 (make-line :a (2dp *svg-current-x* *svg-current-y*)
-			   :b (2dp (first args) (second args)))
-	   (setf *svg-current-x* (first args)
-		 *svg-current-y* (second args))))
+	 (interpret-svg-lineto (svg-absolute-x (first args))
+			       (svg-absolute-y (second args))))
+	
 	((string= cmd "l")
-	 (prog1 (make-line :a (2dp *svg-current-x* *svg-current-y*)
-			   :b (2dp (+ *svg-current-x* (first args))
-				   (+ *svg-current-y* (second args))))
-	   (incf *svg-current-x* (first args))
-	   (incf *svg-current-y* (second args))))
+	 (interpret-svg-lineto (svg-relative-x (first args))
+			       (svg-relative-y (second args))))
+
 	((string= cmd "H")
-	 (prog1 (make-line :a (2dp *svg-current-x* *svg-current-y*)
-			   :b (2dp (first args) *svg-current-y*))
-	   (setf *svg-current-x* (first args))))
+	 (interpret-svg-lineto (svg-absolute-x (first args)) *svg-current-y*))
+
 	((string= cmd "h")
-	 (prog1 (make-line :a (2dp *svg-current-x* *svg-current-y*)
-			   :b (2dp (+ *svg-current-x* (first args))
-				   *svg-current-y*))
-	   (incf *svg-current-x* (first args))))
+	 (interpret-svg-lineto (svg-relative-x (first args)) *svg-current-y*))
+
 	((string= cmd "V")
-	 (prog1 (make-line :a (2dp *svg-current-x* *svg-current-y*)
-			   :b (2dp *svg-current-x* (first args)))
-	   (setf *svg-current-y* (first args))))
+	 (interpret-svg-lineto *svg-current-x* (svg-absolute-y (first args))))
+
 	((string= cmd "v")
-	 (prog1 (make-line :a (2dp *svg-current-x* *svg-current-y*)
-			   :b (2dp *svg-current-x*
-				   (+ *svg-current-y* (first args))))
-	   (incf *svg-current-y* (first args))))
+	 (interpret-svg-lineto *svg-current-x* (svg-relative-y (first args))))
+
 	((string= cmd "z")
-	 (prog1 (make-line :a (2dp *svg-current-x* *svg-current-y*)
-			   :b (2dp *svg-subpath-x* *svg-subpath-y*))
-	   (setf *svg-current-x* *svg-subpath-x*
-		 *svg-current-y* *svg-subpath-y*)))
+	 (interpret-svg-lineto *svg-subpath-x* *svg-subpath-y*))
+
 	(t (format t "unknown path: ~A ~A~%" cmd args))))
 	
 
@@ -232,7 +250,8 @@
     (when (eql (elt numberstring 0) #\-)
       (setf negative t
 	    numberstring (subseq numberstring 1)))
-    (let ((result (mapcar #'parse-float (remove-whitespace (cl-ppcre:split "[, ]" numberstring)))))
+    (let ((result (mapcar #'parse-float (remove-whitespace (cl-ppcre:split "[, ]"
+									   (cl-ppcre:regex-replace-all "-" numberstring " -"))))))
       (when negative
 	(setf (first result) (- (first result))))
       result)))
@@ -244,7 +263,7 @@
 						      :with-registers-p t
 						      :omit-unmatched-p nil)))
 	 (result))
-    (format t "path commands: ~S~%" commandS)
+;;    (format t "path commands: ~S~%" commandS)
     (let ((*svg-current-x* 0)
 	  (*svg-current-y* 0))
       (remove nil
@@ -283,7 +302,9 @@
   (walk-svg-node svg))
 
 (defun test-curve-svg (svg)
-  (let ((curve (curve-to-arcs (first (interpret-svg (load-svg svg))))))
+  (let* ((curve (curve-to-arcs (first (interpret-svg (load-svg svg)))))
+	 (bbox (bounding-box curve)))
+    (format t "bbox: ~A~%" bbox)
     (with-program ("svg")
       (with-tool (*default-tool*)
 	(with-named-pass ("svg")
@@ -292,4 +313,6 @@
 	    (goto-abs :x (2d-point-x start)
 		      :y (2d-point-y start)))
 	  (with-tool-down ()
-	    (mill-curve curve)))))))
+	      (mill-curve curve)
+	      )))))))
+

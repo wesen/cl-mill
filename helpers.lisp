@@ -52,6 +52,17 @@
 	  (aref res 2 2) 1)
     res))
 
+(defun mirror-matrix (p1)
+  (let ((res (make-array '(3 3) :initial-element 0))
+	(x (2d-point-x p1))
+	(y (2d-point-y p1)))
+    (setf (aref res 2 2) 1
+	  (aref res 0 0) (- (square x) (square y))
+	  (aref res 0 1) (* 2 x y)
+	  (aref res 1 0) (* 2 x y)
+	  (aref res 1 1) (- (square y) (square x)))
+    (matrix-scale res (/ 1 (+ (square x) (square y))))))
+
 (defun translation-matrix (x y)
   (let ((res (copy-matrix *unity-matrix*)))
     (setf (aref res 0 2) x
@@ -74,6 +85,14 @@
       (dotimes (j (array-dimension matrix 1))
 	(setf (aref res i j)
 	      (aref matrix i j))))
+    res))
+
+(defun matrix-scale (matrix a)
+  (let ((res (copy-matrix matrix)))
+    (dotimes (i 3)
+      (dotimes (j 3)
+	(setf (aref res i j)
+	      (* a (aref res i j)))))
     res))
 
 (defun invert-matrix (matrix)
