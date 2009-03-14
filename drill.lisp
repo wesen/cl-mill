@@ -14,7 +14,7 @@
 		 :number 9
 		 :feed-xy 600
 		 :feed-z 240
-		 :depth 1))
+		 :depth 1.5))
 
 
 (defun pcb (file outfile)
@@ -115,7 +115,7 @@
 (defvar *frontplate-program*)
 (defvar *frontplate-elements*)
 
-(defparameter *frontplate-depth* 3.6)
+(defparameter *frontplate-depth* 2.4)
 (defvar *frontplate-top* t)
 (defvar *frontplate-side* nil)
 
@@ -132,24 +132,30 @@
 	   (drill :x x :y y :diameter 5.5 :depth *frontplate-depth*)))
 	  ((string= package "POWER")
 	   (when *frontplate-top*
-	   (progn
-	     (goto-abs :x (- x 7.25) :y (- y 4.25))
-	     (rectangle-inline 14.5 8.5 :depth *frontplate-depth*)
-	     )))
-
+	     ;; orig
+	     (progn
+	       (goto-abs :x (- x 7.25) :y (- y 4.25))
+	       (rectangle-inline 14 7.5 :depth *frontplate-depth*)
+	       )))
+	  
 	  ((string= package "MAB5SH")
 	   (when *frontplate-side*
 	   (drill :x 11.5 :y x :diameter 18.5 :depth *frontplate-depth*)))
 
 	  ((string= package "DCJ0202")
 	   (when *frontplate-side*
-	     (goto-abs :x 0 :y (+ y 5))
-	     (rectangle-inline 12 10 :depth *frontplate-depth*)))
+	     #+nil
+	     (progn ;; orig
+	       (goto-abs :x 0 :y (+ y 5))
+	       (rectangle-inline 12 10 :depth *frontplate-depth*))
+	     (progn
+	       (goto-abs :x 2.5 :y (+ y 6))
+	       (rectangle-inline 9 8 :depth *frontplate-depth*))))
 	  
 	  ((string= package "DISPLAY-TEXT-C1624A")
 	   (when *frontplate-top*
 	     (progn (goto-abs :x (- x 32.6) :y (- y 16.9))
-		    (rectangle-inline 72 27 :depth *frontplate-depth*)))))))
+		    (rectangle-inline 71.5 26.5 :depth *frontplate-depth*)))))))
 
 (defun test-file (&key (x 0) (y 0))
   (let ((*frontplate-elements* nil))
@@ -188,10 +194,11 @@
 	    )))
 
 (defparameter *alu-tool*
-  (make-instance 'tool :diameter 2 :depth 1.2 :number 8 :feed-xy 500 :feed-z 100))
+  (make-instance 'tool :diameter 2 :depth 1.3 :number 8 :feed-xy 500 :feed-z 100))
 
 (defun minicommand-casing-side-top-hammond-first ()
-  (let ((tool *alu-tool*))
+  (let ((tool *alu-tool*)
+	(*frontplate-depth* 3.0))
     (with-program ("casing")
       (with-named-pass ("frontplate")
 	(with-tool (tool)
@@ -209,11 +216,13 @@
     
 
 (defun minicommand-casing-side-top ()
-  (let ((tool *alu-tool*))
+  (let ((tool *alu-tool*)
+	(*frontplate-depth* 3.6)) ;; abschleif tiefe 2.0 mm oder so
+	
     (with-program ("casing")
-      #+nil(with-named-pass ("umrandung")
+      (with-named-pass ("umrandung")
 	(goto-abs :x 0 :y 0)
-	(rectangle 31 118))
+	(rectangle 30 119))
 
       (with-named-pass ("frontplate")
 	(with-tool (tool)
@@ -224,59 +233,78 @@
 
 	(with-named-pass ("mill")
 	  (with-tool (*alu-tool*)
-	  (with-transform ((translation-matrix 2.1 5)) ;; 4 pcb zu rand + 1
+	  (with-transform ((translation-matrix 6.5 4)) ;; 4 pcb zu rand + 1
 	    (let ((*eagle-drills-p* nil)
 		  (*frontplate-top* nil)
 		  (*frontplate-side* t))
 	      (load-file "/Users/manuel/siff-svn/ruinwesen/eagle/midicommand/minicommand.lisp"))))))))
-    
-(defun test-minicommand-casing ()
-  (let ((tool *alu-tool*))
-    
-    
-    (with-program ("casing")
+
+(defun minicommand-frontplate (tool)
       (with-named-pass ("frontplate")
 	(with-tool (tool)
 	  (goto-abs :x 0 :y 0)
 	  (goto-abs :z *fly-height*)))
       
       (with-tool (tool)
-	(with-transform ((translation-matrix 2.5 -3))
+	(with-transform ((translation-matrix 2.8 -0.75))
 	  (with-transform ((translation-matrix 90 0))
 	    (with-transform ((rotation-matrix -90))
 	      (with-transform ((translation-matrix 5 3))
-		(load-file "/Users/manuel/siff-svn/ruinwesen/eagle/midicommand/minicommand-ioboard.lisp"))))
-
-
-	  (with-named-pass ("engrave")
-	    (let* ((curves (mapcar #'curve-to-arcs (interpret-svg (load-svg "/Users/manuel/Downloads/minicommand-engrave.svg"))))
-		   (wbbox (bounding-box curves)))
-	      (format t "wbbox: ~A width: ~A height; ~A~%" wbbox (bbox-width wbbox) (bbox-height wbbox))
-	      
-	      (with-tool (*engrave-tool*)
-		(with-transform ((translation-matrix 87.5 2))
-		  (with-transform ((rotation-matrix -90))
-		    (with-transform ((translation-matrix 21 1.5))
-		      (with-transform ((scaling-matrix 0.28))
-			(with-transform ((translation-matrix (- (2d-point-x (line-a wbbox)))
-							     (- (2d-point-y (line-a wbbox)))))
-			  (dolist (curve curves)
-			    (goto-abs :z *fly-height*)
-			    (let ((start (curve-start curve)))
-			      (goto-abs :x (2d-point-x start)
-					:y (2d-point-y start)))
-			    (with-tool-down ()
-			      (mill-curve curve)
-			      )))))))))))
+		(load-file "/Users/manuel/siff-svn/ruinwesen/eagle/midicommand/minicommand-ioboard.lisp"))))))
+      
+      #-nil
+      (with-named-pass ("engrave")
+	(let* ((curves (mapcar #'curve-to-arcs (interpret-svg (load-svg "/Users/manuel/test.svg"))))
+	       (wbbox (bounding-box curves)))
+	  (format t "wbbox: ~A width: ~A height; ~A~%" wbbox
+		  (bbox-width wbbox)
+		  (bbox-height wbbox))
 	  
-	  
-	(with-named-pass ("umrandung")
-	  (goto-abs :x 0 :y -2
-		    )
-	  (rectangle-inline 95 120 :depth 4)))
+	  (with-tool (*engrave-tool*)
+	    (with-transform ((translation-matrix 42.3 46.8))
+	      (with-transform ((translation-matrix (+ (bbox-height wbbox)) 0))
+		(with-transform ((rotation-matrix -90))
+		  (with-transform ((translation-matrix (- (2d-point-x (line-a wbbox)))
+						       (- (2d-point-y (line-a wbbox)))))
+		    (dolist (curve curves)
+		      (goto-abs :z *fly-height*)
+		      (let ((start (curve-start curve)))
+			(goto-abs :x (2d-point-x start)
+				  :y (2d-point-y start)))
+		      (with-tool-down ()
+			(mill-curve curve)
+			))))))))))
+
+  
+
+(defun test-minicommand-casing ()
+  (let ((tool *alu-tool*))
+    
+    
+    (with-program ("casing")
+      (minicommand-frontplate *alu-tool*)
+      (with-named-pass ("umrandung")
+	(goto-abs :x 0 :y 0
+		  )
+	(rectangle-inline 93.5 119 :depth 4)))
 
 
-	    )))
+	    ))
+
+(defun test-minicommand-casing-2 ()
+  (with-program ("casing2")
+    (minicommand-frontplate *alu-tool*)
+    (with-transform ((translation-matrix 0 122))
+      (minicommand-frontplate *alu-tool*))))
+
+(defun test-minicommand-casing-3 ()
+  (with-program ("casing2")
+    (minicommand-frontplate *alu-tool*)
+    (with-transform ((translation-matrix 0 122))
+      (minicommand-frontplate *alu-tool*))
+    (with-transform ((translation-matrix 0 244))
+      (minicommand-frontplate *alu-tool*))))
+
 
 (defun test-rotation ()
   (with-program ("test")

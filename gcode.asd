@@ -9,7 +9,7 @@
   :version "0.1"
   :maintainer "Manuel Odendahl <wesen@ruinwesen.com>"
   :serial t
-  :depends-on (:cl-gd :uffi :cocoahelper :lispbuilder-sdl :unit-test :cl-pdf :cxml)
+  :depends-on (:cl-gd :uffi :cocoahelper :lispbuilder-sdl :unit-test :cl-pdf :cxml :cl-ppcre)
   :components
   (
    ;; thirdparty
