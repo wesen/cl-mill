@@ -58,25 +58,150 @@
 		  (arc-ccw :x (2d-point-x b) :y (2d-point-y b)
 			   :i (2d-point-x centre) :j (2d-point-y centre))))))))
 
-(defun mill-curve (curve &key depth (scale 1))
+(defun mill-segment-ramp (seg to-z)
+  (cond ((typep seg 'line)
+	 (mill-abs :x (2d-point-x (line-b seg))
+		   :y (2d-point-y (line-b seg))
+		   :z to-z))
+	((typep seg 'arc)
+	 (with-slots (a b centre direction) seg
+	   (cond ((eq direction :cw)
+		  (arc-cw  :x (2d-point-x b) :y (2d-point-y b) :z to-z 
+			   :i (2d-point-x centre) :j (2d-point-y centre)))
+		 ((eq direction :ccw)
+		  (arc-ccw :x (2d-point-x b) :y (2d-point-y b) :z to-z 
+			   :i (2d-point-x centre) :j (2d-point-y centre))))))))
+
+
+;; XXX add ramping
+
+
+
+(defmacro repeat-for-depth-ramp (list depth &key (ramplen 10))
+  (let ((curx (gensym))
+	(cury (gensym)))
+    `(let* ((nums (ceiling (/ ,depth (tool-depth *current-tool*))))
+	    ramp-in ramp-out main)
+       
+       (if (circular-segment-p ,list)
+	   (let* ((ramps (collect-segments-for-length ,list ,ramplen))
+		  (ramps2 (collect-segments-for-length (second ramps) ,ramplen)))
+	     (setf ramp-in (first ramps)
+		   ramp-out (first ramps2)
+		   main (second ramps)))
+	   (let* ((ramps (collect-segments-for-length ,list ,ramplen))
+		  (ramps2 (collect-segments-for-length (reverse (second ramps)) ,ramplen)))
+	     (setf ramp-in (first ramps)
+		   ramp-out (reverse (first ramps2))
+		   main (reverse (second ramps2)))))
+
+       ;;(format t "nums: ~A ramp in : ~A~%main: ~A~%ramp out: ~A~%" nums ramp-in main ramp-out)
+       
+	    (with-transform ((scaling-matrix scale))
+	      
+       (loop for i from 0 below nums
+	  for curdepth from 0 by (tool-depth *current-tool*)
+	  for nextdepth = (min ,depth (+ curdepth (tool-depth *current-tool*)))
+	  do 
+	    (let ((,curx (orig-current-x))
+		  (,cury (orig-current-y)))
+
+	      (loop for ramp-seg in ramp-in
+		 with len = (object-length ramp-in)
+		 with milled-len = 0
+		 do
+		   (incf milled-len (object-length ramp-seg))
+		   (mill-segment-ramp ramp-seg (- (+ curdepth
+						     (* (- nextdepth curdepth)
+							(/ milled-len len)))))
+		   (format t "IN -> ~A~%"
+			   (+ curdepth
+			      (* (- nextdepth curdepth)
+				 (/ milled-len len)))))
+
+	      (loop for i in main
+		 do
+		     (mill-segment i))
+
+	      (format t "~A ~A~%" i (1- nums))
+	      (when (= i (1- nums))
+		(format t "z: ~A~%" (current-z))
+		(loop for i in ramp-in
+		     do (mill-segment i))
+		
+		(loop for ramp-seg in ramp-out
+		   with len = (object-length ramp-out)
+		   with milled-len = len
+		   do
+		     (decf milled-len (object-length ramp-seg))
+		     (format t "milled-len: ~A, len: ~A~%" milled-len len)
+		     (mill-segment-ramp ramp-seg (* (current-z)
+						    (/ milled-len len)))
+		     (format t "OUT -> ~A~%"
+			     (* (current-z)
+				(/ milled-len len)))))
+
+	      (unless (or (= i (1- nums))
+			  (and (epsilon-= ,curx (orig-current-x))
+			       (epsilon-= ,cury (orig-current-y))))
+		(tool-up)
+		(goto-abs :x ,curx :y ,cury)
+		(tool-down :depth curdepth))))
+
+       (tool-up)))))
+    
+(defun collect-segments-for-length (segments length)
+  (let ((res)
+	(len 0))
+    (do ((segs segments (cdr segs))
+	 (col nil))
+	((or (null segs)
+	     (>= len length))
+	 (list (nreverse col) segs))
+      (incf len (object-length (first segs)))
+      (push (first segs) col))))
+
+(defun mill-curve (curve &key depth (scale 1) (ramp t))
   (let ((point (object-start-point (first curve))))
     (with-transform ((scaling-matrix scale))
-      (fly-to :x (2d-point-x point) :y (2d-point-y point))))
+      (tool-up)
+      (goto :x (2d-point-x point) :y (2d-point-y point))))
 
-  (repeat-for-depth ((or depth (tool-depth *current-tool*)))
-    (with-transform ((scaling-matrix scale))
-      (dolist (seg curve)
-	(mill-segment seg)))))
+  (if ramp
+      (repeat-for-depth-ramp curve (or depth (tool-depth *current-tool*)))
+      (repeat-for-depth ((or depth (tool-depth *current-tool*)))
+			(with-transform ((scaling-matrix scale))
+			  (dolist (seg curve)
+			    (mill-segment seg))))))
 
-(defun interpret-curve (CurvE)
+(defun test-circle (radius)
+  (list
+   (make-arc :a (2dp (- radius) 0)
+	     :b (2dp 0 radius)
+	     :centre (2dp 0 0)
+	     :direction :cw)
+   (make-arc :a (2dp 0 radius)
+	     :b (2dp radius 0)
+	     :centre (2dp 0 0)
+	     :direction :cw)
+   (make-arc :a (2dp radius 0)
+	     :b (2dp 0 (- radius))
+	     :centre (2dp 0 0)
+	     :direction :cw)
+   (make-arc :a (2dp 0 (- radius))
+	     :b (2dp (- radius) 0)
+	     :centre (2dp 0 0)
+	     :direction :cw)))
+
+(defun interpret-curve (CurvE &key depth)
   (with-program ("potrace")
-    (with-tool (*pcb-tool*)
+    (with-tool (*current-tool*)
       (with-named-pass ("mill")
-	(mill-curve curve)))))
+	(mill-curve curve :depth depth)))))
 
 (defun test-curve (curve)
   (with-program ("potrace")
-    (with-tool (*pcb-tool*)
+    (with-tool (*trace-tool*)
       (with-named-pass ("mill")
 	(with-transform ((scaling-matrix 0.2))
 ;;	  (mill-curve curve)
@@ -102,9 +227,9 @@
 	  (max-y (max (2d-point-y a) (2d-point-y b))))
       (make-line :a (2dp min-x min-y) :b (2dp max-x max-y)))))
 
-(defmethod bounding-box ((a arc))
+(defmethod bounding-box ((arc arc))
   ;; XXX billig, stimmt nicht
-  (with-slots (a b) a
+  (with-slots (a b) arc
     (let ((min-x (min (2d-point-x a) (2d-point-x b)))
 	  (min-y (min (2d-point-y a) (2d-point-y b)))
 	  (max-x (max (2d-point-x a) (2d-point-x b)))
@@ -158,154 +283,20 @@
 
 (defparameter *plywood-board-tool*
   (make-instance 'tool
-		 :diameter 1
+		 :diameter 2
 		 :number 6
 		 :feed-xy 600
 		 :feed-z 240
 		 :depth 2))
 
 
-(defun maennchen-trace-files (images &key (scale 0.4))
-  (with-program ("potrace")
-    (with-tool (*plywood-board-tool*)
-      (spindle-on)
-      (goto-abs :x 0 :y 0)
-      (goto-abs :z *fly-height*)
-      
-      (let* ((panels (mapcar #'(lambda (x) (calculate-panel-code
-					    `((maennchen-trace-panel ,x :scale ,scale))))
-			     images))
-	     (orders (order-panels panels '((1 2 3)
-					    (4 5 6)) 10)))
-	(loop for order in orders
-	   for x = (second order)
-	   for y = (third order)
-	   for panel = (first order)
-	   do (schedule-panel panel x y))))))
+(defparameter *trace-tool*
+  *plywood-board-tool*)
 
-
-(defun maennchen-trace-panel (num &key (scale 0.4) cache)
-  (let* ((image (format nil "/Users/manuel/siff-svn/ruinwesen/mididuino-boards/boards/board-eyes-~A.png" num))
-	 (outline (format nil "/Users/manuel/siff-svn/ruinwesen/mididuino-boards/boards/board-outline-~A.png" num))
-	 (image2 (format nil "/Users/manuel/siff-svn/ruinwesen/mididuino-boards/boards/board-logo-~A.png" num))
-	 (curves-outline (or (and cache *outline*)
-			     (mapcar #'curve-to-arcs
-				     (setf *outline-bezier*
-					   (trace-image outline :not-colors (list #xFFFFFF
-										  #xFFFEFE))))))
-	 (curves-eyes (or (and cache *eyes*)
-			  (mapcar #'curve-to-arcs
-				  (setf *eyes-bezier*
-					(trace-image image :not-colors (list #xFFFFFF))))))
-	 
-	 (curves-name (or (and cache *name*)
-			  (mapcar #'curve-to-arcs
-				  (setf *name-bezier*
-					(trace-image image2 :not-colors (list #xFFFFFF)))))))
-    (format t "image~%")
-    (image-colors image)
-    (format t "outline~%")
-    (image-colors outline)
-    (format t "image2~%")
-    (image-colors image2)
-    (setf curves-outline (remove-if #'(lambda (x)
-					(bbox-below-p x 2)) curves-outline))
-    (setf curves-eyes (remove-if #'(lambda (x)
-					(bbox-below-p x 2)) curves-eyes))
-    (setf curves-name (remove-if #'(lambda (x)
-					(bbox-below-p x 2)) curves-name))
-
-    (setf *outline* curves-outline)
-    (setf *eyes* curves-eyes)
-    (setf *name* curves-name)
-    (format t "cmplete bbox: ~A~%" (bounding-box (append curves-outline curves-eyes)))
-;;    (setf *eye* (first curves-eyes))
-
-    (let ((bbox (bounding-box (append curves-outline curves-eyes))))
-      (with-tool (*plywood-board-tool*)
-
-	(with-named-pass ("drills")
-	  (with-tool (*plywood-board-tool*)
-	    (with-transform ((translation-matrix 7 60))
-;;	      (p5-rect :x 10 :y 10 :width 153 :height 84.6)
-	      
-	      (drill :x 10 :y 10 :diameter 3 :depth 4)
-	      (drill :x (+ 10 153) :y 10
-		     :diameter 3 :depth 4)
-	      (drill :x (+ 10 153) :y (+ 10 84.6) :diameter 3 :depth 4)
-	      (drill :x 10 :y (+ 10 84.6) :diameter 3 :depth 4)
-	      
-	      (drill :x 8 :y 0 :diameter 3 :depth 4)
-	      (drill :x 10 :y -36 :diameter 3 :depth 4)
-	      (drill :x 87 :y -36 :diameter 3 :depth 4)
-	      (drill :x 89 :y 0 :diameter 3 :depth 4)
-	      )))
-	  
-	
-	(with-transform ((translation-matrix (* scale (- (2d-point-x (line-a bbox))))
-					     (* scale (- (2d-point-y (line-a bbox))))))
-	  
-	  (with-named-pass ("eyes")
-	    (with-tool (*plywood-board-tool*)
-	      (dolist (curve curves-eyes)
-		(mill-curve (offset-curve curve 3) :depth 0.7 :scale scale)
-
-	      #+nil(with-named-pass ("raster")
-		(let ((box (bounding-box curve)))
-		  (with-transform ((scaling-matrix scale))
-		    (with-tool-down (2)
-		      (dolist (seg (raster (offset-curve curve 3)
-					   :start-y (floor (bbox-bottom box))
-					   :end-y (ceiling (bbox-top box))))
-			(fly-to :x (2d-point-x (object-start-point seg))
-				:y (2d-point-y (object-start-point seg)))
-			(mill-segment seg))))))
-
-	      )))
-
-	  (with-named-pass ("font")
-	    (with-tool (*plywood-board-tool*)
-	      (dolist (curve curves-name)
-		(mill-curve curve :scale scale :depth 0.7))))
-	    
-	  (with-named-pass ("inner")
-	    (with-tool (*plywood-board-tool*)
-	      (mill-curve (offset-curve (first curves-outline) 3) :depth 0.7 :scale scale)))
-	  
-	  (with-named-pass ("outline")
-	    (with-tool (*plywood-board-tool*)
-	      (mill-curve (offset-curve (first curves-outline) -6) :scale scale :depth 4))))))))
-
-;; board = 1035 pixel width
-(defun test-eyes-offset (&key (scale 0.4))
-  (with-program ("maennchen")
-    (with-tool (*pcb-tool*)
-  (let ((bbox (bounding-box (append *outline* *eyes*))))
-    (with-tool (*pcb-tool*)
-      (spindle-on)
-      (goto-abs :x 0 :y 0)
-      (goto-abs :z *fly-height*)
-      (with-transform ((translation-matrix (* scale (- (2d-point-x (line-a bbox))))
-					   (* scale (- (2d-point-y (line-a bbox))))))
-	
-	(with-named-pass ("eyes")
-	  (let ((logo (first (last *eyes*))))
-	    (mill-curve *logo* :depth 2 :scale scale)))))))))
-    
-
-  
-
-(defun maennchen-trace (num &key (scale 0.337) cache)
-  (with-program ("maennchen")
-    (with-tool (*pcb-tool*)
-      (spindle-on)
-      (goto-abs :x 0 :y 0)
-      (goto-abs :z *fly-height*)
-      (maennchen-trace-panel num :scale scale :cache cache))))
 
 (defun interpret-potrace (potrace)
   (with-program ("potrace")
-    (with-tool (*pcb-tool*)
+    (with-tool (*trace-tool*)
       (with-named-pass ("mill")
 	(with-tool-down ()
 	  (with-transform ((scaling-matrix 0.3))

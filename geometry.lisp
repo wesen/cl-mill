@@ -350,3 +350,10 @@
 
 		     (make-2D-POINT :X 101.80000000000291d0 :Y 24.999999999999943d0)
 		      (make-2D-POINT :X 543.0d0 :Y 24.999999999999943d0)))
+
+(defgeneric object-length (object))
+(defmethod object-length ((line line))
+  (line-length line))
+
+(defmethod object-length ((list list))
+  (reduce #'+ (mapcar #'object-length list)))

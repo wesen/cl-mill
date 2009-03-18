@@ -397,7 +397,7 @@
 	 (with-tool-down (,depth)
 	   ,@body)))))
 
-(defparameter *fly-height* 1.5)
+(defparameter *fly-height* 2.5)
 
 (defun spindle-on ()
   (add-gcode-move `(:m3)))

@@ -1,0 +1,322 @@
+(in-package :gcode)
+
+(defparameter *kiefer-width* 4) ;; 4 mm kiefer holz
+
+(defparameter *kiefer-tool*
+  (make-instance 'tool
+		 :diameter 2
+		 :number 11
+		 :feed-xy 600
+		 :feed-z 240
+		 :depth 1.5))
+
+(defparameter *holz-box-wx* 32)
+(defparameter *holz-box-wy* 60)
+(defparameter *holz-box-height* 22)
+(defparameter *holz-box-schiebedach* t)
+
+(defun length-steps (length)
+  (floor (/ (1- length) *kiefer-width*)))
+
+(defun holz-box-top (&key (wx *holz-box-wx*) (wy *holz-box-wy*) (height *holz-box-height*))
+  (with-tool-down (*kiefer-width*)
+    (if *holz-box-schiebedach*
+	(progn
+	  (mill-r)(mill-r)(mill-r)
+	  (repeat ((length-steps wx))
+		  (mill-r) (mill-r))
+	  (mill-r++)(mill-r)(mill-r)
+	  (mill-u++)(s-mill-round-l)(mill-u--)
+	   )
+	
+	(progn
+	  
+	  (tool-up)
+	  (mill-r)
+	  (tool-down :depth *kiefer-width*)
+	  
+	  ;; 3 nasen
+	  (mill-bridge-r++) (s-mill-round-u) (mill-r--) (s-mill-round-d)
+	  (repeat ((length-steps wx))
+		  (mill-r++) (s-mill-round-u) (mill-r--) (s-mill-round-d))
+	  (mill-r++) (s-mill-round-u) 
+	  (mill-r)(mill-u)))
+    
+    
+    (s-mill-round-r) (mill-bridge-u++) (s-mill-round-l) (mill-u--)
+    (repeat ((length-steps height))
+	    (s-mill-round-r) (mill-u++) (s-mill-round-l) (mill-u--))
+    (s-mill-round-r) (mill-u++)
+
+    (s-mill-round-l) (mill-l)
+    (s-mill-round-u) (mill-bridge-l++) (s-mill-round-d) (mill-l--)
+    (repeat ((length-steps wx))
+	    (s-mill-round-u) (mill-l++) (s-mill-round-d) (mill-l--))
+    (s-mill-round-u) (mill-l++)
+
+    (s-mill-round-d) (mill-d)
+    (s-mill-round-l)
+    (mill-bridge-d++) (s-mill-round-r) (mill-d--)
+    (repeat ((length-steps height))
+	    (s-mill-round-l) (mill-d++) (s-mill-round-r) (mill-d--))
+    (s-mill-round-l) (mill-d++)
+    
+    (if *holz-box-schiebedach*
+	(progn
+	  (mill-d)
+	  )
+	(progn
+	  (s-mill-round-r) (s-mill-round-d)))))
+  
+(defun holz-box-bottom (&key (wx *holz-box-wx*) (wy *holz-box-wy*) (height *holz-box-height*))
+  (with-tool-down (*kiefer-width*)
+    (mill-bridge-r++) (s-mill-round-u) (mill-r--) (s-mill-round-d)
+    (repeat ((length-steps wy))
+	    (mill-r++) (s-mill-round-u) (mill-r--) (s-mill-round-d))
+    (mill-r++) (s-mill-round-u) (mill-r--) (s-mill-round-d)
+    (mill-r++) (s-mill-round-u) (mill-u)
+    
+    (s-mill-round-r) (mill-bridge-u++) (s-mill-round-l) (mill-u--)
+    (repeat ((length-steps wx))
+	    (s-mill-round-r) (mill-u++) (s-mill-round-l) (mill-u--))
+    (s-mill-round-r) (mill-u++) (mill-l) (mill-l)
+    
+    (s-mill-round-u)
+    (mill-bridge-l++) (s-mill-round-d) (mill-l--) (s-mill-round-u)
+    (repeat ((length-steps wy))
+	    (mill-l++) (s-mill-round-d) (mill-l--) (s-mill-round-u))
+    (mill-l++) (mill-l)
+    
+    (mill-bridge-d++) (s-mill-round-r) (mill-d--) (s-mill-round-l)
+    (repeat ((length-steps wx))
+	    (mill-d++) (s-mill-round-r) (mill-d--) (s-mill-round-l))
+    (mill-d++) (s-mill-round-r) (mill-d--) (s-mill-round-l)
+    (mill-d++) (mill-d)))
+
+(defun holz-box-1 (&key (wx *holz-box-wx*) (wy *holz-box-wy*) (height *holz-box-height*))
+  (if *holz-box-schiebedach*
+      (progn
+	(with-tool-down (*kiefer-width*)
+	)
+	)
+
+      (progn
+	(tool-up)
+	(mill-r) (mill-u)
+	
+	(with-tool-down (*kiefer-width*)
+	  (mill-r)
+	  (s-mill-round-d) (mill-bridge-r++) (s-mill-round-u) (mill-r--)
+	  (repeat ((length-steps wx))
+		  (s-mill-round-d) (mill-r++) (s-mill-round-u) (mill-r--))
+	  (s-mill-round-d) (mill-r++)
+	  
+	  (s-mill-round-u) (mill-u)
+	  (s-mill-round-r) (mill-bridge-u++) (s-mill-round-l) (mill-u--)
+	  (repeat ((length-steps wy))
+		  (s-mill-round-r) (mill-u++) (s-mill-round-l) (mill-u--))
+	  (s-mill-round-r) (mill-u++) (s-mill-round-l)
+	  
+	  (s-mill-round-u) (mill-l++) (s-mill-round-d) (mill-l--)
+	  (s-mill-round-u) (mill-bridge-l++) (s-mill-round-d) (mill-l--)
+	  (repeat ((length-steps wx))
+		  (s-mill-round-u) (mill-l++) (s-mill-round-d) (mill-l--))
+	  (s-mill-round-u) (mill-l++) (mill-d) 
+	  
+	  (mill-bridge-d++) (s-mill-round-r) (mill-d--) (s-mill-round-l)
+	  (repeat ((length-steps wy))
+		  (mill-d++) (s-mill-round-r) (mill-d--) (s-mill-round-l))
+	  (mill-d++) (s-mill-round-r) (mill-d)))))
+      
+(defun holz-box-2 (&key (wx *holz-box-wx*) (wy *holz-box-wy*) (height *holz-box-height*))
+  (with-tool-down (*kiefer-width*)
+    (mill-bridge-r++) (s-mill-round-u) (mill-r--) (s-mill-round-d)
+    (repeat ((length-steps wx))
+	    (mill-r++) (s-mill-round-u) (mill-r--) (s-mill-round-d))
+    (mill-r++) (s-mill-round-u) (mill-r--) (s-mill-round-d)
+    (mill-r++) (s-mill-round-u) (mill-u)
+    
+    (s-mill-round-r) (mill-bridge-u++) (s-mill-round-l) (mill-u--)
+    (repeat ((length-steps height))
+	    (s-mill-round-r) (mill-u++) (s-mill-round-l) (mill-u--))
+    (s-mill-round-r) (mill-u++) (mill-u)
+
+    (if *holz-box-schiebedach*
+	(progn
+	  (mill-l)(mill-l)
+	  (repeat ((length-steps wx))
+		  (mill-l)(mill-l))
+	  (mill-l)(mill-l)(mill-l)(mill-l++)
+	  )
+	(progn
+	  (mill-bridge-l++) (s-mill-round-d) (mill-l--) (s-mill-round-u)
+	  (repeat ((length-steps wx))
+		  (mill-l++) (s-mill-round-d) (mill-l--) (s-mill-round-u))
+	  (mill-l++) (s-mill-round-d) (mill-l--) (s-mill-round-u)
+	  (mill-l++) (mill-l)))
+    
+    (mill-bridge-d++) (s-mill-round-r) (mill-d--) (s-mill-round-l)
+    (repeat ((length-steps height))
+	    (mill-d++) (s-mill-round-r) (mill-d--) (s-mill-round-l))
+    (mill-d++) (s-mill-round-r) (mill-d--) (s-mill-round-l)
+    (mill-d++) (mill-d)))
+
+(defun holz-box-3 (&key (wx *holz-box-wx*) (wy *holz-box-wy*) (height *holz-box-height*))
+  (with-tool-down (*kiefer-width*)
+    (if *holz-box-schiebedach*
+	(progn
+	  (tool-up)
+	  (mill-u)
+	  (mill-r)
+	  (tool-down :depth *kiefer-width*)
+	  (mill-r)
+	  (repeat ((length-steps wy))
+		  (mill-r)(mill-r))
+	  (mill-r)(mill-r)(mill-r++)
+	  ;; (mill-u)
+	  )
+
+	(progn
+	  (mill-bridge-r++) (s-mill-round-u) (mill-r--) (s-mill-round-d)
+	  (repeat ((length-steps wy))
+		  (mill-r++) (s-mill-round-u) (mill-r--) (s-mill-round-d))
+	  (mill-r++) (s-mill-round-u) (mill-r--) (s-mill-round-d)
+	  (mill-r++) (s-mill-round-u)))
+    
+    (mill-u)
+    (s-mill-round-r) (mill-bridge-u++) (s-mill-round-l) (mill-u--)
+    (repeat ((length-steps height))
+	    (s-mill-round-r) (mill-u++) (s-mill-round-l) (mill-u--))
+    (s-mill-round-r) (mill-u++) (mill-u)
+    
+    (mill-l++)
+    (s-mill-round-d) (mill-l--)
+    (s-mill-round-u) (mill-bridge-l++) (s-mill-round-d) (mill-l--)
+    (repeat ((length-steps wy))
+	    (s-mill-round-u) (mill-l++) (s-mill-round-d) (mill-l--))
+    (s-mill-round-u) (mill-l++) (s-mill-round-d)
+    
+    (mill-d) (s-mill-round-l)
+    (mill-bridge-d++) (s-mill-round-r) (mill-d--) (s-mill-round-l)
+    (repeat ((length-steps height))
+	    (mill-d++) (s-mill-round-r) (mill-d--) (s-mill-round-l))
+    (mill-d++)
+
+    (if (not *holz-box-schiebedach*)
+	(progn
+;;	  (mill-d)
+	  )
+	(progn
+	  (s-mill-round-r) (mill-d)))))
+
+
+(defun holz-box-4 (&key (wx *holz-box-wx*) (wy *holz-box-wy*) (height *holz-box-height*))
+  (with-tool-down (*kiefer-width*)
+
+    (tool-up)
+    (mill-r)(mill-u)
+    (tool-down :depth *kiefer-width*)
+
+    (if *holz-box-schiebedach*
+	(progn
+;;	  (mill-d)
+	  (mill-r)(mill-r)
+	  (repeat ((length-steps wy))
+		  (mill-r)(mill-r))
+	  (mill-r)(mill-r++)(mill-u)
+;;	  (mill-u)
+	  )
+	(progn
+	  (s-mill-round-d) (mill-bridge-r++) (s-mill-round-u) (mill-r--)
+	  (repeat ((length-steps wy))
+		  (s-mill-round-d) (mill-r++) (s-mill-round-u) (mill-r--))
+	  (s-mill-round-d) (mill-r++) (s-mill-round-u) (mill-r)
+	  (mill-u)))
+    
+    (s-mill-round-r) (mill-bridge-u++) (s-mill-round-l) (mill-u--)
+    (repeat ((length-steps height))
+	    (s-mill-round-r) (mill-u++) (s-mill-round-l) (mill-u--))
+    (s-mill-round-r) (mill-u++) (s-mill-round-l)
+    
+    (mill-l)
+    
+    (s-mill-round-u) (mill-bridge-l++) (s-mill-round-d) (mill-l--)
+    (repeat ((length-steps wy))
+	    (s-mill-round-u) (mill-l++) (s-mill-round-d) (mill-l--))
+    (s-mill-round-u) (mill-l++) (s-mill-round-d)
+
+
+    (mill-d)
+    (s-mill-round-l) (mill-bridge-d++) (s-mill-round-r) (mill-d--)
+    (repeat ((length-steps height))
+	    (s-mill-round-l) (mill-d++) (s-mill-round-r) (mill-d--))
+    (s-mill-round-l) (mill-d++) (s-mill-round-r)
+    
+    ))))
+
+(defun holz-box-program (&key (wx 30) (wy *holz-box-wy*) (height 20))
+
+  (with-program ("holz-box")
+    (with-tool (*kiefer-tool*)
+      (tool-up)
+      (goto-abs :x 0 :y 0)
+      (with-named-pass ("1")
+	(holz-box-4)))))
+
+
+
+(defun holz-box-panels (&key (wx 30) (wy *holz-box-wy*) (height 20))
+    (loop for f in '(holz-box-top
+		     holz-box-bottom
+		     ;; holz-box-1
+		     holz-box-2
+		     holz-box-3
+		     holz-box-4)
+       collect (calculate-panel f))))
+
+(defun holz-box-schedule (&key (wx 30) (wy *holz-box-wy*) (height 20))
+  (let ((*kiefer-width* 3.8)
+	(*tool-diameter* 2)
+	(*cube-steps* 5)
+	(*holz-box-wx* wx)
+	(*holz-box-wy* wy)
+	(*holz-box-height* height))
+    
+    (with-program ("small-cube")
+      (with-tool (*cube-tool*)
+	(spindle-on)
+	(goto-abs :x 0 :y 0)
+	(goto-abs :z *fly-height*)
+	
+	(with-transform ((translation-matrix 0 20))
+	  (let* ((panels (holz-box-panels :wx wx :wy wy :height height))
+		 (orders (order-panels panels '((2 )
+						(3 4)
+						(1 5)) 10)))
+	    (loop for order in orders
+	       for x = (second order)
+	       for y = (third order)
+	       for panel = (first order)
+	       do (with-named-pass ("drills")
+		    (panel-drills x y panel))
+		 (schedule-panel panel x y))))))))
+
+
+(defun panel-drills (x y panel)
+  (when (= x 0)
+    (goto-abs :x (- x 6.5)
+	      :y (+ y (panel-height panel) 3.5))
+    (circle-inline 1.4 :depth 3.8)
+    (mill-abs :z *fly-height*))
+  (when (= y 0)
+    (goto-abs :x (+ x (panel-width panel) 3.5)
+	      :y (- y 6.5))
+    (circle-inline 1.4 :depth 3.8)
+		      (mill-abs :z *fly-height*))
+  (goto-abs :x (+ x (panel-width panel) 3.5)
+	    :y (+ y (panel-height panel) 3.5))
+  (circle-inline 1.4 :depth 3.8)
+  (mill-abs :z *fly-height*))
+
+
+

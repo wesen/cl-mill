@@ -231,9 +231,11 @@
 	
 	(let* ((param (potrace-param-default))
 	       (state (potrace-trace param bitmap)))
+		(format t "trace ok ~A~%" state)
 	  (if (= (get-slot-value state 'potrace-state 'status) +POTRACE-STATUS-OK+)
 	      (progn
-		(format t "trace ok~%")
+		(format t "trace ok ~A~%" state)
+		(setf *state* state)
 		(let ((path (get-slot-pointer state 'potrace-state 'plist)))
 
 		  (setf res (potrace-to-curves path))

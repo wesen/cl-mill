@@ -6,6 +6,9 @@
 (defun arc-radius (arc)
   (line-length (make-line :a (arc-a arc) :b (arc-centre arc))))
 
+(defmethod object-length ((arc arc))
+  (* (arc-angle arc) (arc-radius arc)))
+
 (defun arc-angle (arc)
   (with-slots (a b centre direction) arc
     (let ((angle (case direction

@@ -102,6 +102,20 @@
        (arc-cw-rel :x radius :y (- radius) :i 0 :j (- radius))
        (arc-cw-rel :x (- radius) :y (- radius) :i (- radius) :j 0))))
 
+(defun make-circle (radius &key ccw)
+  (if ccw
+      (progn
+	(arc-ccw-rel :x radius :y radius :i 0 :j radius :f (tool-feed-z *current-tool*))
+	(arc-ccw-rel :x (- radius) :y radius :i (- radius) :j 0)
+	(arc-ccw-rel :x (- radius) :y (- radius) :i 0 :j (- radius))
+	(arc-ccw-rel :x radius :y (- radius) :i radius :j 0))
+      (progn
+       (arc-cw-rel :x (- radius) :y radius :i 0 :j radius :f (tool-feed-z *current-tool*))
+       (arc-cw-rel :x radius :y radius :i radius :j 0)
+       (arc-cw-rel :x radius :y (- radius) :i 0 :j (- radius))
+       (arc-cw-rel :x (- radius) :y (- radius) :i (- radius) :j 0))))
+
+
 (defun p5-circle (x y width)
   (decf width (+ (tool-diameter *current-tool*) 5))
   (goto-abs :x x :y (- y (/ width 2)))

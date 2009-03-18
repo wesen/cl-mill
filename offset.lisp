@@ -240,13 +240,20 @@
   (cond ((typep seg 'line)
 	 (line-b seg))
 	((typep seg 'arc)
-	 (arc-b seg))))
+	 (arc-b seg))
+	((typep seg 'list)
+	 (segment-end (first (last seg))))))
+
+(defun circular-segment-p (seg)
+  (point-epsilon= (segment-start seg) (segment-end seg)))
 
 (defun segment-start (seg)
   (cond ((typep seg 'line)
 	 (line-a seg))
 	((typep seg 'arc)
-	 (arc-a seg))))
+	 (arc-a seg))
+	((typep seg 'list)
+	 (segment-start (first seg)))))
 
 (defun seg-stop-at (seg at)
   (cond ((typep seg 'line)
