@@ -96,7 +96,25 @@
 	    (mill-d)
 	    )
 	  (progn
-	    (s-mill-round-r) (s-mill-round-d))))))
+	    (s-mill-round-r) (s-mill-round-d)))
+
+  (when *logo2*
+    (let* ((rlogo2 (rotate-and-bring-to-zero *logo2* 180))
+	   (bbox (bounding-box rlogo2))
+	   (logo-w (bbox-width bbox))
+	   (logo-h (bbox-height bbox))
+	   (scale-w (/ (* 0.6 wx) logo-w))
+	   (scale-h (/ (* 0.6 height) logo-h))
+	   (scale (min scale-w scale-h))
+	   (real-logo-w (* scale logo-w))
+	   (real-logo-h (* scale logo-h)))
+      (format t "scale: ~A~%" scale)
+      (with-transform ((translation-matrix (* (- wx real-logo-w) 0.5)
+					   (* (- height real-logo-h) 0.4)))
+	(with-transform ((scaling-matrix scale))
+	  (dolist (curve rlogo2)
+	    (mill-curve curve :depth 1)))))))
+      ))
   
 (defun holz-box-bottom (&key (wx *holz-box-wx*) (wy *holz-box-wy*) (height *holz-box-height*))
   (let* ((x-width (calc-box-width wx))
@@ -185,8 +203,10 @@
 		    (mill-d++ y-step-width) (s-mill-round-r)
 		    (mill-d-- y-step-width) (s-mill-round-l))
 	    (mill-d++) (s-mill-round-r) (mill-d))))))
-      
-(defun holz-box-2 (&key (wx *holz-box-wx*) (wy *holz-box-wy*) (height *holz-box-height*))
+
+(defparameter *logo* nil)
+(defparameter *logo2* nil)
+(defun holz-box-2 (&key (wx *holz-box-wx*) (wy *holz-box-wy*) (height *holz-box-height*) )
   (let* ((x-width (calc-box-width wx))
 	 (y-width (calc-box-width wy))
 	 (h-width (calc-box-width height))
@@ -232,7 +252,23 @@
 	      (mill-d++ h-step-width) (s-mill-round-r)
 	      (mill-d-- h-step-width) (s-mill-round-l))
       (mill-d++) (s-mill-round-r) (mill-d--) (s-mill-round-l)
-      (mill-d++) (mill-d))))
+      (mill-d++) (mill-d)))
+
+  (when *logo*
+    (let* ((bbox (bounding-box *logo*))
+	   (logo-w (bbox-width bbox))
+	   (logo-h (bbox-height bbox))
+	   (scale-w (/ (* 0.6 wx) logo-w))
+	   (scale-h (/ (* 0.6 height) logo-h))
+	   (scale (min scale-w scale-h))
+	   (real-logo-w (* scale logo-w))
+	   (real-logo-h (* scale logo-h)))
+      (format t "scale: ~A~%" scale)
+      (with-transform ((translation-matrix (* (- wx real-logo-w) 0.5)
+					   (* (- height real-logo-h) 0.6)))
+	(with-transform ((scaling-matrix scale))
+	  (dolist (curve *logo*)
+	    (mill-curve curve :depth 1)))))))
 
 (defun holz-box-3 (&key (wx *holz-box-wx*) (wy *holz-box-wy*) (height *holz-box-height*))
   (let* ((x-width (calc-box-width wx))
@@ -386,6 +422,13 @@
 	(*holz-box-wx* wx)
 	(*holz-box-wy* wy)
 	(*holz-box-height* height))
+
+
+  ;; XXX hack
+    (let ((logo
+	   (or *logo*
+	       (mapcar #'curve-to-arcs (trace-image "/Users/manuel/logo-transparent.png" :colors (list 0))))))
+      (setf *logo* logo))
     
   (with-program ("small-cube")
     (with-tool (*cube-tool*)
@@ -395,8 +438,9 @@
 	
       (with-transform ((translation-matrix 0 20))
 	(let* ((panels (holz-box-panels :wx wx :wy wy :height height))
-	       (orders (order-panels panels '((5))
-				     #+nil'((2 )
+	       (orders (order-panels panels
+				     #+nil'((5))
+				     #-nil'((2 )
 					    (3 4)
 					    (1 5))
 

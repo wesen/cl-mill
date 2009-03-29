@@ -20,6 +20,12 @@
 	  (+ angle (* 2 *PI*))
 	  angle))))
 
+(defmethod transform-object ((arc arc) matrix)
+  (make-arc :a (transform-object (arc-a arc) matrix)
+	    :b (transform-object (arc-b arc) matrix)
+	    :direction (arc-direction arc)
+	    :centre (transform-object (arc-centre arc) matrix)))
+
 (deftest :arc "Test arc angle cw"
   (let ((arc (make-arc :centre (2dp 0 0)
 		       :a (2dp -1 0)

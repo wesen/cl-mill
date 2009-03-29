@@ -253,6 +253,13 @@
 	 (max-y (reduce #'max (mapcar #'(lambda (x) (2d-point-y (line-b x))) bboxes))))
     (make-line :a (2dp min-x min-y) :b (2dp max-x max-y))))
 
+(defun rotate-and-bring-to-zero (object angle)
+  (let* ((robj (transform-object object (rotation-matrix angle)))
+	 (bbox (bounding-box robj))
+	 (bottom (bbox-bottom bbox))
+	 (left (bbox-left bbox)))
+    (transform-object robj (translation-matrix (- left) (- bottom)))))
+
 (defun bbox-below-p (obj y)
   (let ((bbox (bounding-box obj)))
     (< (2d-point-y (line-b bbox)) y)))
@@ -283,7 +290,7 @@
 
 (defparameter *plywood-board-tool*
   (make-instance 'tool
-		 :diameter 2
+		 :diameter 1
 		 :number 6
 		 :feed-xy 600
 		 :feed-z 240

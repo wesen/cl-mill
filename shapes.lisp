@@ -102,7 +102,7 @@
        (arc-cw-rel :x radius :y (- radius) :i 0 :j (- radius))
        (arc-cw-rel :x (- radius) :y (- radius) :i (- radius) :j 0))))
 
-(defun make-circle (radius &key ccw)
+#+nil(defun make-circle (radius &key ccw)
   (if ccw
       (progn
 	(arc-ccw-rel :x radius :y radius :i 0 :j radius :f (tool-feed-z *current-tool*))

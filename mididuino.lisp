@@ -18,6 +18,33 @@
 	   for panel = (first order)
 	   do (schedule-panel panel x y))))))
 
+(defun hubble-circle (&key (x 5) (y 5))
+  (let ((width 7))
+    (with-named-pass ("mill")
+      (goto-abs :x x :y (- y (/ width 2)))
+      (repeat-for-depth (4)
+			(circle (/ width 2))))
+    (with-named-pass ("drill")
+      (drill :x x :y y :diameter 3 :depth 4))))
+
+(defun make-panel-array (num x y)
+  (make-list y :initial-element (make-list x :initial-element num)))
+
+(defun hubble-program ()
+  (let ((panels (list (calculate-panel 'hubble-circle))))
+    
+  (with-program ("hubble")
+    (with-tool (*plywood-board-tool*)
+      (spindle-on)
+      (goto-abs :x 0 :y 0)
+      (goto-abs :z *fly-height*)
+      (let ((orders (order-panels panels (make-panel-array 1 10 6) 3)))
+	(loop for order in orders
+	   for x = (second order)
+	   for y = (third order)
+	   for panel = (first order)
+	     do (schedule-panel panel x y)))))))
+
 
 (defun maennchen-trace-panel (num &key (scale 0.4) cache)
   (let* ((image (format nil "/Users/manuel/siff-svn/ruinwesen/mididuino-boards/boards/board-eyes-~A.png" num))
@@ -59,7 +86,6 @@
     (let ((bbox (bounding-box (append curves-outline curves-eyes))))
       (with-tool (*plywood-board-tool*)
 
-	#+nil
 	(with-named-pass ("drills")
 	  (with-tool (*plywood-board-tool*)
 	    (with-transform ((translation-matrix 7 60))
@@ -81,7 +107,7 @@
 	(with-transform ((translation-matrix (* scale (- (2d-point-x (line-a bbox))))
 					     (* scale (- (2d-point-y (line-a bbox))))))
 
-	  #+nil
+	  #-nil
 	  (with-named-pass ("eyes")
 	    (with-tool (*plywood-board-tool*)
 	      (dolist (curve curves-eyes)
@@ -103,14 +129,14 @@
 	  (with-named-pass ("font")
 	    (with-tool (*plywood-board-tool*)
 	      (dolist (curve curves-name)
-		(mill-curve curve :scale scale :depth 3))))
+		(mill-curve curve :scale scale :depth 0.7))))
 
-	  #+nil
+	  #-nil
 	  (with-named-pass ("inner")
 	    (with-tool (*plywood-board-tool*)
 	      (mill-curve (offset-curve (first curves-outline) 3) :depth 0.7 :scale scale)))
 
-	  #+nil
+	  #-nil
 	  (with-named-pass ("outline")
 	    (with-tool (*plywood-board-tool*)
 	      (mill-curve (offset-curve (first curves-outline) -6) :scale scale :depth 4))))))))
@@ -118,27 +144,29 @@
 ;; board = 1035 pixel width
 (defun test-eyes-offset (&key (scale 0.4))
   (with-program ("maennchen")
-    (with-tool (*pcb-tool*)
-  (let ((bbox (bounding-box (append *outline* *eyes*))))
-    (with-tool (*pcb-tool*)
-      (spindle-on)
-      (goto-abs :x 0 :y 0)
-      (goto-abs :z *fly-height*)
-      (with-transform ((translation-matrix (* scale (- (2d-point-x (line-a bbox))))
-					   (* scale (- (2d-point-y (line-a bbox))))))
-	
-	(with-named-pass ("eyes")
-	  (let ((logo (first (last *eyes*))))
-	    (mill-curve *logo* :depth 2 :scale scale)))))))))
-    
+    (with-transform ((translation-matrix 0 4))
+      (with-tool (*plywood-board-tool*)
+	(let ((bbox (bounding-box (append *outline* *eyes*))))
+	  (spindle-on)
+	  (goto-abs :x 0 :y 0)
+	  (goto-abs :z *fly-height*)
+	  (with-transform ((translation-matrix (* scale (- (2d-point-x (line-a bbox))))
+					       (* scale (- (2d-point-y (line-a bbox))))))
+	    
+	    (with-named-pass ("eyes")
+	      (let ((logo (first (last *eyes*))))
+		(mill-curve *logo* :depth 2 :scale scale)))))))))
+
 
   
 
 (defun maennchen-trace (num &key (scale 0.337) cache)
   (with-program ("maennchen")
-    (with-tool (*trace-tool*)
-      (spindle-on)
-      (goto-abs :x 0 :y 0)
-      (goto-abs :z *fly-height*)
-      (maennchen-trace-panel num :scale scale :cache cache))))
+    (with-transform ((translation-matrix 0 4))
+      (with-tool (*plywood-board-tool*)
+	(spindle-on)
+	(goto-abs :x 0 :y 0)
+	(goto-abs :z *fly-height*)
+	(maennchen-trace-panel num :scale scale :cache cache)
+	))))
 

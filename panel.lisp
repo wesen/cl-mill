@@ -30,15 +30,21 @@
 
 (defun calculate-panel (function-name)
   ;; new program XXX
-  (let ((*current-program* (make-instance 'gcode-program :name "calculate shit")))
-    (with-new-pass ("calculate pass")
-      (let ((res (with-save-xy () (funcall (symbol-function function-name)))))
+  (let* ((*current-program* (make-instance 'gcode-program :name "calculate shit")))
+    (funcall (symbol-function function-name))
+    (let* ((passes (gcode-program-passes *current-program*))
+	   (min-x (apply #'min (mapcar #'pass-min-x passes)))
+	   (max-x (apply #'max (mapcar #'pass-max-x passes)))
+	   (min-y (apply #'min (mapcar #'pass-min-y passes)))
+	   (max-y (apply #'max (mapcar #'pass-max-y passes)))
+	   (min-z (apply #'min (mapcar #'pass-min-z passes)))
+	   (max-z (apply #'max (mapcar #'pass-max-z passes))))
 	(make-instance 'panel :name function-name
 		       :gcode res
-		       :min-x (min-x) :max-x (max-x)
-		       :min-y (min-y) :max-y (max-y)
-		       :min-z (min-z) :max-z (max-z)
-		       :code `(,function-name))))))
+		       :min-x min-x :max-x max-x
+		       :min-y min-y :max-y max-y
+		       :min-z min-z :max-z max-z
+		       :code `(,function-name)))))
 
 (defun calculate-panel-code (code &key passname)
   (let ((*current-program* (make-instance 'gcode-program :name "calculate shit")))
