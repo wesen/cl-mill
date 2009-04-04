@@ -62,7 +62,12 @@
 	  
 	  ((string= package "MAB5SH")
 	   (when *frontplate-side*
-	   (drill :x 11.5 :y (- x 1.0) :diameter 18.5 :depth *frontplate-depth*)))
+	     #-debug
+	     (drill :x 11.5 :y (- x 1.0) :diameter 18.5 :depth *frontplate-depth*)
+
+	     #+debug
+	     (drill :x 11.5 :y (- x 1.0) :diameter 2 :depth 2)
+	     ))
 
 	  ((string= package "DCJ0202")
 	   (when *frontplate-side*
@@ -70,9 +75,11 @@
 	     (progn ;; orig
 	       (goto-abs :x 0 :y (+ y 5))
 	       (rectangle-inline 12 10 :depth *frontplate-depth*))
+
+	     #-debug
 	     (progn
-	       (goto-abs :x 4 :y (+ y 5.5))
-	       (rectangle-inline 8.5 8 :depth *frontplate-depth*))))
+	       (goto-abs :x 1.2 :y (+ y 5))
+	       (rectangle-inline 11 9.5 :depth *frontplate-depth*))))
 	  
 	  ((string= package "DISPLAY-TEXT-C1624A")
 	   (when *frontplate-top*
@@ -117,12 +124,15 @@
 
 	    )))
 
+(defparameter *alu-tool-top*
+  (make-instance 'tool :diameter 2 :depth 3.2 :number 8 :feed-xy 500 :feed-z 100))
+
 (defparameter *alu-tool*
   (make-instance 'tool :diameter 2 :depth 2.6 :number 8 :feed-xy 500 :feed-z 100))
 
 (defun minicommand-casing-side-top-hammond-first ()
   (let ((tool *alu-tool*)
-	(*frontplate-depth* 3.0))
+	(*frontplate-depth* 3.3))
     (with-program ("casing")
       (with-named-pass ("frontplate")
 	(with-tool (tool)
@@ -140,8 +150,8 @@
     
 
 (defun minicommand-casing-side-top ()
-  (let ((tool *alu-tool*)
-	(*frontplate-depth* 3.6)) ;; abschleif tiefe 2.0 mm oder so
+  (let ((tool *alu-tool-top*)
+	(*frontplate-depth* (tool-depth *alu-tool-top*))) ;; abschleif tiefe 2.0 mm oder so
 	
     (with-program ("casing")
       (with-named-pass ("umrandung")
@@ -156,7 +166,7 @@
       
 
 	(with-named-pass ("mill")
-	  (with-tool (*alu-tool*)
+	  (with-tool (*alu-tool-top*)
 	  (with-transform ((translation-matrix 6.5 4)) ;; 4 pcb zu rand + 1
 	    (let ((*eagle-drills-p* nil)
 		  (*frontplate-top* nil)
