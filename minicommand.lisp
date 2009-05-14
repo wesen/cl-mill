@@ -25,7 +25,7 @@
 (defvar *frontplate-program*)
 (defvar *frontplate-elements*)
 
-(defparameter *frontplate-depth* 1.8)
+(defparameter *frontplate-depth* 2.6)
 (defvar *frontplate-top* t)
 (defvar *frontplate-side* nil)
 
@@ -45,7 +45,13 @@
   (with-named-pass ("frontplate")
     (cond ((string= package "3FTL06")
 	   (when *frontplate-top*
-	     (drill :x x :y y :diameter 10.5 :depth *frontplate-depth*)))
+
+	     ;; test
+;;	     (drill :x x :y y :diameter 2 :depth 0.5)
+	     
+	     ;; real one
+	     (drill :x x :y y :diameter 10.5 :depth *frontplate-depth*)
+	     ))
 	  ((string= package "CI-11")
 	   (when *frontplate-top*
 	   (drill :x x :y y :diameter 7.5 :depth *frontplate-depth*)))
@@ -125,7 +131,7 @@
 	    )))
 
 (defparameter *alu-tool-top*
-  (make-instance 'tool :diameter 2 :depth 3.2 :number 8 :feed-xy 500 :feed-z 100))
+  (make-instance 'tool :diameter 2 :depth 1.6 :number 8 :feed-xy 500 :feed-z 100))
 
 (defparameter *alu-tool*
   (make-instance 'tool :diameter 2 :depth 2.6 :number 8 :feed-xy 500 :feed-z 100))
@@ -151,7 +157,7 @@
 
 (defun minicommand-casing-side-top ()
   (let ((tool *alu-tool-top*)
-	(*frontplate-depth* (tool-depth *alu-tool-top*))) ;; abschleif tiefe 2.0 mm oder so
+	(*frontplate-depth* 3.2))
 	
     (with-program ("casing")
       (with-named-pass ("umrandung")
@@ -172,6 +178,263 @@
 		  (*frontplate-top* nil)
 		  (*frontplate-side* t))
 	      (load-file "/Users/manuel/siff-svn/ruinwesen/eagle/midicommand/minicommand.lisp"))))))))
+
+(defun cpu-pcb-drills ()
+  (with-named-pass ("drills")
+    (with-tool (*mdf-tool-2mm*)
+	(with-transform ((translation-matrix 2.8 -0.75))
+	  (with-transform ((translation-matrix 90 0))
+	    (with-transform ((rotation-matrix -90))
+	      (with-transform ((translation-matrix 5 3))
+		(drill :x 12.000000 :y 4.000000 :diameter 3.000000 :depth 8)
+		(drill :x 97.000000 :y 4.000000 :diameter 3.000000 :depth 8)
+		(drill :x 104.000000 :y 74.000000 :diameter 3.000000 :depth 8)
+		(drill :x 6.000000 :y 74.000000 :diameter 3.000000 :depth 8))))))))
+
+(defparameter *pcb-gravier-tool*
+  (make-instance 'tool :diameter 0.5 :number 22))
+
+(defun minicommand-fix ()
+  (with-named-pass ("power-fix")
+    (with-tool (*pcb-gravier-tool*)
+      (with-transform ((translation-matrix 2.8 -0.75))
+	(with-transform ((translation-matrix 90 0))
+	  (with-transform ((rotation-matrix -90))
+	    (with-transform ((translation-matrix 5 3))
+;;	      #+nil
+	      (goto-abs :x 87.4 :y 78.4 :z *fly-height*)
+;;	      #+nil
+	      (with-tool-down (0.2)
+		(mill-abs :x 87.4 :y 78.4)
+		(mill-abs :x 83.4 :y 74.0))
+
+	      (goto-abs :x 86.2 :y 59.2 :z *fly-height*)
+	      (with-tool-down (0.2)
+		(mill-abs :x 86.2 :y 56.6))
+
+;;	      #+nil
+	      (goto-abs :x 108.3 :y 46.2)
+;;	      #+nil
+	      (with-tool-down (0.2)
+		(mill-abs :x 109.3 :y 46.2))
+
+;;	      #+nil
+	      (goto-abs :x 28.8 :y 27.6)
+;;	      #+nil
+	      (with-tool-down (0.2)
+		(mill-abs :x 28.8 :y 16.8)
+		(mill-abs :x 34.7 :y 16.8)
+		(mill-abs :x 34.7 :y 27.6)
+		(mill-abs :x 28.8 :y 27.6))
+
+	      )))))))
+
+
+(defun minicommand-fix-bottom ()
+  (with-named-pass ("power-fix")
+    (with-tool (*pcb-gravier-tool*)
+      (with-transform ((mirror-matrix (2dp 0 1)))
+	(with-transform ((translation-matrix -90 -0.75))
+	  (with-transform ((translation-matrix 90 0))
+	    (with-transform ((rotation-matrix -90))
+	      (with-transform ((translation-matrix 5 3))
+		))))))))
+
+(defun minicommand-fix-bottom-drills ()
+  (with-named-pass ("drills")
+    (with-tool (*mdf-tool-2mm*)
+      (with-transform ((mirror-matrix (2dp 0 1)))
+	(with-transform ((translation-matrix -90 -0.75))
+	  (with-transform ((translation-matrix 90 0))
+	    (with-transform ((rotation-matrix -90))
+	      (with-transform ((translation-matrix 5 3))
+		(drill :x 12.000000 :y 4.000000 :diameter 3.000000 :depth 8)
+		(drill :x 97.000000 :y 4.000000 :diameter 3.000000 :depth 8)
+		(drill :x 104.000000 :y 74.000000 :diameter 3.000000 :depth 8)
+		(drill :x 6.000000 :y 74.000000 :diameter 3.000000 :depth 8))))))))
+  (with-named-pass ("fix")
+    (with-tool (*pcb-gravier-tool*)
+      (with-transform ((mirror-matrix (2dp 0 1)))
+	(with-transform ((translation-matrix -90 -0.75))
+	  (with-transform ((translation-matrix 90 0))
+	    (with-transform ((rotation-matrix -90))
+	      (with-transform ((translation-matrix 5 3))
+	      (goto-abs :x 87.4 :y 78.4 :z *fly-height*)
+	      (with-tool-down (0.2)
+		(mill-abs :x 87.4 :y 78.4)
+		(mill-abs :x 83.4 :y 74.0))
+
+	      (goto-abs :x 105.8 :y 68.4)
+	      (with-tool-down (0.2)
+		(mill-abs :x 97.2 :y 68.4)
+		(mill-abs :x 97.2 :y 61.2)
+		(mill-abs :x 87.6 :y 61.2)
+		(mill-abs :x 87.6 :y 49.5)
+		(mill-abs :x 100.8 :y 49.5)
+		(mill-abs :x 100.8 :y 60.0)
+		(mill-abs :x 105.8 :y 60)
+		(mill-abs :x 105.8 :y 68.4))
+
+	      ))))))))
+
+  
+
+
+(defun minicommand-heatsink-fix-board (&optional (start 1))
+  (decf start)
+  (let ((*fly-height* 10))
+    (with-program ("heatsink-fix")
+      (when (<= start 0)
+	(minicommand-fix))
+      
+      (when (<= start 1)
+	(with-transform ((translation-matrix 0 122))
+	  (minicommand-fix)))
+
+      (when (<= start 2)
+	(with-transform ((translation-matrix 0 244))
+	  (minicommand-fix)))
+
+      (with-transform ((translation-matrix 105 0))
+	(when (<= start 3)
+	  (minicommand-fix))
+	
+	(when (<= start 4)
+	  (with-transform ((translation-matrix 0 122))
+	    (minicommand-fix)))
+
+	(when (<= start 5)
+	  (with-transform ((translation-matrix 0 244))
+	    (minicommand-fix))))
+
+      (with-transform ((translation-matrix 210 0))
+	(when (<= start 6)
+	  (minicommand-fix))
+	(when (<= start 7)
+	  (with-transform ((translation-matrix 0 122))
+	    (minicommand-fix)))
+	(when (<= start 8)
+	  (with-transform ((translation-matrix 0 244))
+	    (minicommand-fix))))
+      
+
+      (with-transform ((translation-matrix 315 0))
+	(when (<= start 9)
+	  (minicommand-fix))
+	(when (<= start 10)
+	  (with-transform ((translation-matrix 0 122))
+	    (minicommand-fix)))
+	(when (<= start 11)
+	  (with-transform ((translation-matrix 0 244))
+	    (minicommand-fix)))))))
+
+(defun minicommand-heatsink-fix-board-bottom (&optional (start 1))
+  (decf start)
+  (let ((*fly-height* 8))
+    (with-program ("heatsink-fix")
+      (when (<= start 0)
+	(minicommand-fix-bottom-drills)
+	(minicommand-fix-bottom))
+      
+      (when (<= start 1)
+	(with-transform ((translation-matrix 0 122))
+	  (minicommand-fix-bottom-drills)
+	  (minicommand-fix-bottom)))
+
+      (when (<= start 2)
+	(with-transform ((translation-matrix 0 244))
+	  (minicommand-fix-bottom-drills)
+	  (minicommand-fix-bottom)))
+
+      (with-transform ((translation-matrix 105 0))
+	(when (<= start 3)
+	  (minicommand-fix-bottom-drills)
+	  (minicommand-fix-bottom))
+	
+	(when (<= start 4)
+	  (with-transform ((translation-matrix 0 122))
+	  (minicommand-fix-bottom-drills)
+	    (minicommand-fix-bottom)))
+
+	(when (<= start 5)
+	  (with-transform ((translation-matrix 0 244))
+	  (minicommand-fix-bottom-drills)
+	    (minicommand-fix-bottom))))
+
+      (with-transform ((translation-matrix 210 0))
+	(when (<= start 6)
+	  (minicommand-fix-bottom-drills)
+	  (minicommand-fix-bottom))
+	(when (<= start 7)
+	  (with-transform ((translation-matrix 0 122))
+	  (minicommand-fix-bottom-drills)
+	    (minicommand-fix-bottom)))
+	(when (<= start 8)
+	  (with-transform ((translation-matrix 0 244))
+	  (minicommand-fix-bottom-drills)
+	    (minicommand-fix-bottom))))
+      
+
+      (with-transform ((translation-matrix 315 0))
+	(when (<= start 9)
+	  (minicommand-fix-bottom-drills)
+	  (minicommand-fix-bottom))
+	(when (<= start 10)
+	  (with-transform ((translation-matrix 0 122))
+	  (minicommand-fix-bottom-drills)
+	    (minicommand-fix-bottom)))
+	(when (<= start 11)
+	  (with-transform ((translation-matrix 0 244))
+	  (minicommand-fix-bottom-drills)
+	    (minicommand-fix-bottom)))))))
+
+(defun minicommand-heatsink-drill-board (&optional (start 1))
+  (let ((tool *mdf-tool-2mm*))
+    (decf start)
+    (with-program ("casing")
+      (when (<= start 0)
+	(cpu-pcb-drills))
+
+      (when (<= start 1)
+	(with-transform ((translation-matrix 0 122))
+	  (cpu-pcb-drills)))
+
+      (when (<= start 2)
+	(with-transform ((translation-matrix 0 244))
+	  (cpu-pcb-drills)))
+
+      (with-transform ((translation-matrix 105 0))
+	(when (<= start 3)
+	  (cpu-pcb-drills))
+	
+	(when (<= start 4)
+	  (with-transform ((translation-matrix 0 122))
+	    (cpu-pcb-drills)))
+
+	(when (<= start 5)
+	  (with-transform ((translation-matrix 0 244))
+	    (cpu-pcb-drills))))
+
+      (with-transform ((translation-matrix 210 0))
+	(when (<= start 6)
+	  (cpu-pcb-drills))
+	(when (<= start 7)
+	  (with-transform ((translation-matrix 0 122))
+	    (cpu-pcb-drills)))
+	(when (<= start 8)
+	  (with-transform ((translation-matrix 0 244))
+	    (cpu-pcb-drills))))
+      
+
+      (with-transform ((translation-matrix 315 0))
+	(when (<= start 9)
+	  (cpu-pcb-drills))
+	(when (<= start 10)
+	  (with-transform ((translation-matrix 0 122))
+	    (cpu-pcb-drills)))
+	(when (<= start 11)
+	  (with-transform ((translation-matrix 0 244))
+	    (cpu-pcb-drills)))))))
 
 (defun minicommand-frontplate (tool)
       (with-named-pass ("frontplate")
@@ -304,3 +567,30 @@
 	(rectangle-inline 20 20)
 
 	))))
+
+(defparameter *grob-tool*
+  (make-instance 'tool
+		 :number 17
+		 :diameter 8
+		 :depth 2))
+
+(defun minicommand-fix-innen ()
+  (with-program ("minicommand-fix")
+    (with-named-pass ("fix")
+      (with-tool (*grob-tool*)
+	(spindle-on)
+	(goto-abs :x -0.65 :z 2 :y 111.5)
+	(loop for i from 2.5 upto 10 by 5
+	     do (mill-abs :z (- i))
+	     (mill-abs :y 187.5)
+	     (mill-abs :z (- (+ i 2.5)))
+	     (mill-abs :y 111.5))
+	(mill-abs :x -0.45)
+	(loop for i from 12.5 upto 22.5 by 2.5
+	     do (mill-abs :z (- i))
+	     (mill-abs :y 187.5)
+	     (mill-abs :z (- (+ i 2.5)))
+	     (mill-abs :y 111.5))
+	
+	(mill-abs :z 2)))))
+	

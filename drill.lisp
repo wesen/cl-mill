@@ -41,9 +41,9 @@
 (defvar *eagle-drills-p* t)
 (defvar *eagle-vias-p* nil)
 
-(defun add-drill (&key x y diameter)
+(defun add-drill (&key x y diameter type)
   (when *eagle-drills-p*
-    (push (list x y diameter) *drills*)))
+    (push (list x y diameter type) *drills*)))
 
 (defun add-via (&key x y diameter)
   (when *eagle-vias-p*

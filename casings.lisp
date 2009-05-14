@@ -1,4 +1,4 @@
-(in-package :gcode)
+.(in-package :gcode)
 
 (defun hammond-29830-psla ()
   (with-program ("hammond-29830")
