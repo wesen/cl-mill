@@ -33,17 +33,27 @@
 
 (defun frontplate-element (&key name package x y angle)
   (with-named-pass ("frontplate")
-    (cond ((string= package "3FTL06")
+    (cond ((or (string= package "3FTL06")
+	       (string= package "3FTL06-LED")
+	       (string= package "JOYSTICK"))
 	   (when *frontplate-top*
 	     (drill :x x :y y :diameter 2 :depth 0.5)))
-	  ((string= package "CI-11")
+	  ((string= package "DISPLAY-TEXT-C1624A")
+	   (when *frontplate-top*
+	     ;; (with-named-pass ("display")
+	       (with-tool (*alu-tool*)
+		 (progn (goto-abs :x (- x 32.6) :y (- y 16.9))
+			(rectangle-inline 71.5 26.5 :depth *frontplate-depth*)))))
+	  
+	  #+nil((string= package "CI-11")
 	   (when *frontplate-top*
 	   (drill :x x :y y :diameter 2 :depth 0.5))))))
     
 
 (defun frontplate-element (&key name package x y angle)
   (with-named-pass ("frontplate")
-    (cond ((string= package "3FTL06")
+    (cond ((or (string= package "3FTL06")
+	       (string= package "3FTL06-LED"))
 	   (when *frontplate-top*
 
 	     ;; test
@@ -52,6 +62,8 @@
 	     ;; real one
 	     (drill :x x :y y :diameter 10.5 :depth *frontplate-depth*)
 	     ))
+	  ((string= package "JOYSTICK")
+	   (drill :x x :y y :diameter 23 :depth *frontplate-depth*))
 	  ((string= package "CI-11")
 	   (when *frontplate-top*
 	   (drill :x x :y y :diameter 7.5 :depth *frontplate-depth*)))
@@ -131,7 +143,8 @@
 	    )))
 
 (defparameter *alu-tool-top*
-  (make-instance 'tool :diameter 2 :depth 1.6 :number 8 :feed-xy 500 :feed-z 100))
+  ;; FUER FRONTPLATTEN
+  (make-instance 'tool :diameter 2 :depth 1.3 :number 8 :feed-xy 500 :feed-z 100))
 
 (defparameter *alu-tool*
   (make-instance 'tool :diameter 2 :depth 2.6 :number 8 :feed-xy 500 :feed-z 100))
@@ -231,14 +244,39 @@
 
 
 (defun minicommand-fix-bottom ()
-  (with-named-pass ("power-fix")
-    (with-tool (*pcb-gravier-tool*)
-      (with-transform ((mirror-matrix (2dp 0 1)))
-	(with-transform ((translation-matrix -90 -0.75))
-	  (with-transform ((translation-matrix 90 0))
-	    (with-transform ((rotation-matrix -90))
-	      (with-transform ((translation-matrix 5 3))
-		))))))))
+  (let ((*fly-height* 10))
+    (with-named-pass ("power-fix")
+      (with-tool (*pcb-gravier-tool*)
+	(with-transform ((mirror-matrix (2dp 0 1)))
+	  (with-transform ((translation-matrix -90 90))
+	    (with-transform ((translation-matrix 2.8 23.5))
+	      (with-transform ((rotation-matrix 90))
+		(with-transform ((translation-matrix 5 3))
+		  #+nil
+		  (goto-abs :x 87.4 :y 78.4 :z *fly-height*)
+		  #+nil
+		  (with-tool-down (0.2)
+		    (mill-abs :x 87.4 :y 78.4)
+		    (mill-abs :x 83.4 :y 74.0))
+
+		  (let ((depth 0.6))
+		    (goto-abs :x 105.8 :y 68.4)
+		    (with-tool-down (depth)
+		      (mill-abs :x 97.2 :y 68.4)
+		      (mill-abs :x 97.2 :y 61.2)
+		      (mill-abs :x 87.6 :y 61.2)
+		      (mill-abs :x 87.6 :y 49.5)
+		      (mill-abs :x 100.8 :y 49.5)
+		      (mill-abs :x 100.8 :y 60.0)
+		      (mill-abs :x 105.8 :y 60)
+		      (mill-abs :x 105.8 :y 68.4)))
+		  
+		  
+		  )))))))))
+
+(defun minicommand-fix-bottom-single ()
+  (with-program ("fix-bottom-single")
+    (minicommand-fix-bottom)))
 
 (defun minicommand-fix-bottom-drills ()
   (with-named-pass ("drills")
@@ -436,6 +474,54 @@
 	  (with-transform ((translation-matrix 0 244))
 	    (cpu-pcb-drills)))))))
 
+(defparameter *plywood-board-tool2*
+  (make-instance 'tool
+		 :diameter 1
+		 :number 1
+		 :feed-xy 600
+		 :feed-z 240
+		 :depth 4))
+
+(defun monojoystick-frontplate (tool)
+    (with-program ("monojoystick")
+      
+      (with-named-pass ("frontplate")
+	(with-tool (tool)
+	  (goto-abs :x 0 :y 0)
+	  (goto-abs :z *fly-height*)))
+      
+      (with-named-pass ("drills")
+	(with-tool (tool)
+	  (goto-abs :x 0 :y 0)
+	  (goto-abs :z *fly-height*)))
+      
+      
+      (with-named-pass ("mill")
+	(with-tool (tool)
+	  (goto-abs :x 0 :y 0)
+	  (goto-abs :z *fly-height*)))
+      
+      
+      (with-named-pass ("bridge-cut")
+	(with-tool (tool)
+	  (goto-abs :x 0 :y 0)
+	  (goto-abs :z *fly-height*)))
+      
+    (with-tool (tool)
+      (with-transform ((translation-matrix 2.8 -0.75))
+	(with-transform ((translation-matrix 90 0))
+	  (with-transform ((rotation-matrix -90))
+	    (with-transform ((translation-matrix 5 3))
+	      (load-file "/Users/manuel/weptech/monojoystick-ioboard.lisp")
+	      (with-named-pass ("frontplate")
+		(with-tool (tool)
+		  (frontplate-element :name "JOYSTICK" :package "JOYSTICK" :x 54.85 :y 12.48000 :angle 0.0)
+		  (frontplate-element :name "U$2" :package "DISPLAY-TEXT-C1624A" :x 51.640000 :y 65.500000 :angle 0.000000)))
+	      
+	      )))))))
+  
+  
+
 (defun minicommand-frontplate (tool)
       (with-named-pass ("frontplate")
 	(with-tool (tool)
@@ -448,6 +534,11 @@
 	    (with-transform ((rotation-matrix -90))
 	      (with-transform ((translation-matrix 5 3))
 		(load-file "/Users/manuel/siff-svn/ruinwesen/eagle/midicommand/minicommand-ioboard.lisp"))))))
+
+      (with-named-pass ("debug")
+	(with-tool (tool)
+	  (goto-abs :x 0 :y 0)
+	  (rectangle 94 119)))
       
       #+nil
       (with-named-pass ("engrave")
@@ -571,7 +662,7 @@
 (defparameter *grob-tool*
   (make-instance 'tool
 		 :number 17
-		 :diameter 8
+		 :diameter 3
 		 :depth 2))
 
 (defun minicommand-fix-innen ()
@@ -583,14 +674,20 @@
 	(loop for i from 2.5 upto 10 by 5
 	     do (mill-abs :z (- i))
 	     (mill-abs :y 187.5)
+	     (format t "mill to 187 at ~A~%" (- i))
 	     (mill-abs :z (- (+ i 2.5)))
-	     (mill-abs :y 111.5))
+	     (mill-abs :y 111.5)
+	     (format t "mill to 111.5 at ~A~%" (- (+ i 2.5)))
+	     )
 	(mill-abs :x -0.45)
-	(loop for i from 12.5 upto 22.5 by 2.5
+	(loop for i from 12.5 upto 22.5 by 5
 	     do (mill-abs :z (- i))
 	     (mill-abs :y 187.5)
+	     (format t "mill2 to 187 at ~A~%" (- i))
 	     (mill-abs :z (- (+ i 2.5)))
-	     (mill-abs :y 111.5))
+	     (mill-abs :y 111.5)
+	     (format t "mill2 to 111.5 at ~A~%" (- (+ i 2.5)))
+	     )
 	
 	(mill-abs :z 2)))))
 	

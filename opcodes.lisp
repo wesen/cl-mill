@@ -434,6 +434,9 @@
 (defun pump-on ()
   (add-gcode-move `(:m8)))
 
+(defun program-stop ()
+  (add-gcode-move `(:m00)))
+
 (defun pump-off ()
   (add-gcode-move `(:m9)))
 

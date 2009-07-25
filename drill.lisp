@@ -84,11 +84,10 @@
      ,@body
      (let ((*drills* (sort-drills)))
        (with-named-pass ("drills")
-	 (with-tool (*pcb-tool*)
-	   (dolist (drill *drills*)
-	     (drill :x (first drill)
-		    :y (second drill) ;; XXXX invert!!!
-		    :diameter (third drill))))))))
+	 (dolist (drill *drills*)
+	   (drill :x (first drill)
+		  :y (second drill) ;; XXXX invert!!!
+		  :diameter (third drill)))))))
 
 
 
