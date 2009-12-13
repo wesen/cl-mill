@@ -79,6 +79,7 @@
 	 unless (null b)
 	 collect (make-line :a (2dp (2d-point-x a) y) :b (2dp (2d-point-x b) y)))))
 
+#|
 (defun sdl-draw-raster (curves &key (start-y 0) (end-y 300) (step 1))
   (sdl:with-init ()
     (sdl:window 1240 600)
@@ -94,6 +95,7 @@
     (sdl:update-display)
     (sdl:with-events ()
       (:quit-event () t))))
+|#
 
 (defvar *current-curve* nil)
 

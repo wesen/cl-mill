@@ -302,18 +302,25 @@
 ;;	     (format t "INSERT SEG: ~A~%" seg)
 	     (setf res (insert-segment-with-intersection res seg))
 
+			 #|
 	     (unless (null step)
-	       (sdl:with-color (col (sdl:color :r 0 :g 0 :b 0))
-		 (sdl:clear-display col))
-	       
-	       (sdl:with-color (col (sdl:color :r 255 :g 0 :b 0))
-		 (draw-curve curve))
-	       
-	       (sdl:with-color (col (sdl:color :r 255 :g 255 :b 255))
-		 (draw-curve res))
-	       (sdl:update-display))
+			 (sdl:with-color (col (sdl:color :r 0 :g 0 :b 0))
+			 (sdl:clear-display col))
+			 
+			 (sdl:with-color (col (sdl:color :r 255 :g 0 :b 0))
+			 (draw-curve curve))
+			 
+			 (sdl:with-color (col (sdl:color :r 255 :g 255 :b 255))
+			 (draw-curve res))
+			 (sdl:update-display))
+			 |#
 
+			 (unless (null step)
+				 (draw-curve curve)
+				 (draw-curve res))
+			 
 	     #+nil(push seg res)))
+			
       
     (loop for part in (cdr curve2)
        for seg = (offset-object part offset)
@@ -322,11 +329,17 @@
        do
 
 	 (unless (null step)
+		 #|
 	   (sdl:with-color (sdl:*default-color* (sdl:color :r 0 :g 0 :b 255))
 	     (draw-curve (list seg))
 	     (sdl:with-color (sdl:*default-color* (sdl:color :r 0 :g 200 :b 255))
 	       (draw-curve (list last-seg)))
 	     (sdl:update-display))
+		 |#
+
+		 (draw-curve (list seq))
+		 (draw-curve (list last-seq))
+		 
 	   (when (= steps 0)
 	     (setf steps (read)))
 	   
@@ -464,7 +477,7 @@
 	 (make-line :a (2dp 100 120) :b (2dp 120 120))
 	 (make-line :a (2dp 120 120) :b (2dp 120 100)))))
 
-
+#|
 (defun sdl-curve-offset (curve offset)
   (let ((curve (curve-to-arcs curve)))
     (sdl:with-init ()
@@ -498,7 +511,7 @@
 
 
 (defparameter *test-curve8*
-  (list (make-ARC
+A  (list (make-ARC
        :A (make-2D-POINT :X 122.70350720208663d0 :Y 91.4762717112958d0)
        :B (make-2D-POINT :X 129.17455000574907d0 :Y 80.83247047936504d0)
        :CENTRE (make-2D-POINT :X 135.0327466532994d0 :Y 91.68301987970003d0)
@@ -531,6 +544,8 @@
   (with-transform ((translation-matrix -100 -100))
     (with-transform ((scaling-matrix 4))
       (sdl-curve-step *test-curve7* 5))))
+
+|#
 
 (deftest :intersection "line interesection"
   (test-assert (point-=

@@ -31,43 +31,46 @@
 (defun calculate-panel (function-name)
   ;; new program XXX
   (let* ((*current-program* (make-instance 'gcode-program :name "calculate shit")))
-    (funcall (symbol-function function-name))
-    (let* ((passes (gcode-program-passes *current-program*))
-	   (min-x (apply #'min (mapcar #'pass-min-x passes)))
-	   (max-x (apply #'max (mapcar #'pass-max-x passes)))
-	   (min-y (apply #'min (mapcar #'pass-min-y passes)))
-	   (max-y (apply #'max (mapcar #'pass-max-y passes)))
-	   (min-z (apply #'min (mapcar #'pass-min-z passes)))
-	   (max-z (apply #'max (mapcar #'pass-max-z passes))))
+		(format t "current -program: ~A~%" *current-program*)
+		(with-named-pass ("foobar")
+			(funcall (symbol-function function-name)))
+		(let* ((passes (gcode-program-passes *current-program*))
+					 (min-x (apply #'min (mapcar #'pass-min-x passes)))
+					 (max-x (apply #'max (mapcar #'pass-max-x passes)))
+					 (min-y (apply #'min (mapcar #'pass-min-y passes)))
+					 (max-y (apply #'max (mapcar #'pass-max-y passes)))
+					 (min-z (apply #'min (mapcar #'pass-min-z passes)))
+					 (max-z (apply #'max (mapcar #'pass-max-z passes)))
+					 (res nil))
+			(format t "passes: ~A~%" passes)
 	(make-instance 'panel :name function-name
-		       :gcode res
-		       :min-x min-x :max-x max-x
-		       :min-y min-y :max-y max-y
-		       :min-z min-z :max-z max-z
-		       :code `(,function-name)))))
+								 :gcode res
+								 :min-x min-x :max-x max-x
+								 :min-y min-y :max-y max-y
+								 :min-z min-z :max-z max-z
+								 :code `(with-named-pass ("mill") (,function-name))))))
 
 (defun calculate-panel-code (code &key passname)
   (let ((*current-program* (make-instance 'gcode-program :name "calculate shit")))
     (with-new-pass ("calculate pass")
       (let ((res (with-save-xy () (eval `(progn ,@code)))))
-	(make-instance 'panel :name "code"
-		       :gcode res
-		       :min-x (program-min-x) :max-x (program-max-x)
-		       :min-y (program-min-y) :max-y (program-max-y)
-		       :min-z (program-min-z) :max-z (program-max-z)
-		       :code `(with-named-pass (,(if passname passname "mill")) ,@code))))))
+				(make-instance 'panel :name "code"
+											 :gcode res
+											 :min-x (program-min-x) :max-x (program-max-x)
+											 :min-y (program-min-y) :max-y (program-max-y)
+											 :min-z (program-min-z) :max-z (program-max-z)
+											 :code `(with-named-pass (,(if passname passname "mill")) ,@code))))))
 
 (defun calculate-panel-file (filename)
   (let ((*current-program* (make-instance 'gcode-program :name "calculate shit")))
     (with-new-pass ("calculate pass")
       (let ((res (with-save-xy () (load-file filename))))
-	(make-instance 'panel :name (pathname-name filename)
-		       :gcode res
-		       :min-x (min-x) :max-x (max-x)
-		       :min-y (min-y) :max-y (max-y)
-		       :min-z (min-z) :max-z (max-z)
-		       :code `(load-file ,filename))))))
-
+				(make-instance 'panel :name (pathname-name filename)
+											 :gcode res
+											 :min-x (min-x) :max-x (max-x)
+											 :min-y (min-y) :max-y (max-y)
+											 :min-z (min-z) :max-z (max-z)
+											 :code `(load-file ,filename))))))
 
 (defmacro with-panel ((name) &rest body)
   `(let ((*current-program* (make-instance 'gcode-program :name "calculate shit")))

@@ -38,7 +38,7 @@
     ("http://www.w3.org/Graphics/SVG/1.1/DTD/svg-image.mod"
      "/Users/manuel/cl-mill/svg-dtd/svg-image.mod")
     ("http://www.w3.org/Graphics/SVG/1.1/DTD/svg-style.mod"
-     "/Users/manuel/cl-mill/svg-dtd/svg-style.mod")
+		 "/Users/manuel/cl-mill/svg-dtd/svg-style.mod")
     ("http://www.w3.org/Graphics/SVG/1.1/DTD/svg-shape.mod"
      "/Users/manuel/cl-mill/svg-dtd/svg-shape.mod")
     ("http://www.w3.org/Graphics/SVG/1.1/DTD/svg-marker.mod"
@@ -123,6 +123,7 @@
 (defvar *svg-subpath-y* nil)
 (defvar *svg-prev-ctrl-x* nil)
 (defvar *svg-prev-ctrl-y* nil)
+(defvar *svg-first-move* nil)
 
 (defun mirror-point (p1 p2)
   (let ((p3 (point-- p2 p1)))
@@ -181,94 +182,130 @@
   (prog1 (make-line :a (2dp *svg-current-x* *svg-current-y*)
 		    :b (2dp bx by))
     (update-svg-current bx by)))
-  
 
 (defun interpret-svg-path-move (cmd args)
+	(format t "cmd: ~A~%" cmd)
   (cond ((string= cmd "M")
-	 (interpret-svg-moveto (svg-absolute-x (first args))
-			       (svg-absolute-y (second args))))
+				 (interpret-svg-moveto (svg-absolute-x (first args))
+															 (svg-absolute-y (second args)))
+				 (loop for (f1 f2) on (cddr args) by #'cddr
+							collect (interpret-svg-lineto (svg-absolute-x f1)
+																						(svg-absolute-y f2))))
+				
+				((string= cmd "m")
+				 (if *svg-first-move*
+						 (interpret-svg-moveto (svg-absolute-x (first args))
+																	 (svg-absolute-y (second args)))
+						 (interpret-svg-moveto (svg-relative-x (first args))
+																	 (svg-relative-y (second args))))
+				 (loop for (f1 f2) on (cddr args) by #'cddr
+						collect (interpret-svg-lineto (svg-relative-x f1)
+																					(svg-relative-y f2))))
+				
+				((string= cmd "C")
+				 (loop for args2 on args by #'(lambda (x) (nthcdr 6 x))
+							collect 
+							(interpret-svg-curveto (svg-absolute-x (first args2))
+																		 (svg-absolute-y (second args2))
+																		 (svg-absolute-x (third args2))
+																		 (svg-absolute-y (fourth args2))
+																		 (svg-absolute-x (fifth args2))
+																		 (svg-absolute-y (sixth args2)))))
+				
+				((string= cmd "c")
+				 (loop for args2 on args by #'(lambda (x) (nthcdr 6 x))
+							collect 
+							(interpret-svg-curveto (svg-relative-x (first args2))
+																		 (svg-relative-y (second args2))
+																		 (svg-relative-x (third args2))
+																		 (svg-relative-y (fourth args2))
+																		 (svg-relative-x (fifth args2))
+																		 (svg-relative-y (sixth args2)))))
+				
+				((string= cmd "S")
+				 (interpret-svg-smoothcurveto (svg-absolute-x (first args))
+																			(svg-absolute-y (second args))
+																			(svg-absolute-x (third args))
+																			(svg-absolute-y (fourth args))))
+				((string= cmd "s")
+				 (interpret-svg-smoothcurveto (svg-relative-x (first args))
+																			(svg-relative-y (second args))
+																			(svg-relative-x (third args))
+																			(svg-relative-y (fourth args))))
+				
+				((string= cmd "L")
+				 (interpret-svg-lineto (svg-absolute-x (first args))
+															 (svg-absolute-y (second args))))
+				
+				((string= cmd "l")
+				 (loop for args2 on args by #'cddr
+							collect 
+							(interpret-svg-lineto (svg-relative-x (first args2))
+																		(svg-relative-y (second args2)))))
+				
+				((string= cmd "H")
+				 (interpret-svg-lineto (svg-absolute-x (first args)) *svg-current-y*))
+				
+				((string= cmd "h")
+				 (interpret-svg-lineto (svg-relative-x (first args)) *svg-current-y*))
+				
+				((string= cmd "V")
+				 (interpret-svg-lineto *svg-current-x* (svg-absolute-y (first args))))
+				
+				((string= cmd "v")
+				 (interpret-svg-lineto *svg-current-x* (svg-relative-y (first args))))
+				
+				((string= cmd "z")
+				 (interpret-svg-lineto *svg-subpath-x* *svg-subpath-y*))
+				
+				(t (format t "unknown path: ~A ~A~%" cmd args))))
 
-	((string= cmd "m")
-	 (interpret-svg-moveto (svg-relative-x (first args))
-			       (svg-relative-y (second args))))
-
-	((string= cmd "C")
-	 (interpret-svg-curveto (svg-absolute-x (first args))
-				(svg-absolute-y (second args))
-				(svg-absolute-x (third args))
-				(svg-absolute-y (fourth args))
-				(svg-absolute-x (fifth args))
-				(svg-absolute-y (sixth args))))
-						
-	((string= cmd "c")
-	 (interpret-svg-curveto (svg-relative-x (first args))
-				(svg-relative-y (second args))
-				(svg-relative-x (third args))
-				(svg-relative-y (fourth args))
-				(svg-relative-x (fifth args))
-				(svg-relative-y (sixth args))))
-
-	((string= cmd "S")
-	 (interpret-svg-smoothcurveto (svg-absolute-x (first args))
-				      (svg-absolute-y (second args))
-				      (svg-absolute-x (third args))
-				      (svg-absolute-y (fourth args))))
-	((string= cmd "s")
-	 (interpret-svg-smoothcurveto (svg-relative-x (first args))
-				      (svg-relative-y (second args))
-				      (svg-relative-x (third args))
-				      (svg-relative-y (fourth args))))
-
-	((string= cmd "L")
-	 (interpret-svg-lineto (svg-absolute-x (first args))
-			       (svg-absolute-y (second args))))
-	
-	((string= cmd "l")
-	 (interpret-svg-lineto (svg-relative-x (first args))
-			       (svg-relative-y (second args))))
-
-	((string= cmd "H")
-	 (interpret-svg-lineto (svg-absolute-x (first args)) *svg-current-y*))
-
-	((string= cmd "h")
-	 (interpret-svg-lineto (svg-relative-x (first args)) *svg-current-y*))
-
-	((string= cmd "V")
-	 (interpret-svg-lineto *svg-current-x* (svg-absolute-y (first args))))
-
-	((string= cmd "v")
-	 (interpret-svg-lineto *svg-current-x* (svg-relative-y (first args))))
-
-	((string= cmd "z")
-	 (interpret-svg-lineto *svg-subpath-x* *svg-subpath-y*))
-
-	(t (format t "unknown path: ~A ~A~%" cmd args))))
-	
 
 (defun split-svg-numbers (numberstring)
+;;	(format t "numberstring: ~A~%" numberstring)
   (let ((negative nil))
     (when (eql (elt numberstring 0) #\-)
       (setf negative t
 	    numberstring (subseq numberstring 1)))
     (let ((result (mapcar #'parse-float (remove-whitespace (cl-ppcre:split "[, ]"
-									   (cl-ppcre:regex-replace-all "-" numberstring " -"))))))
+									   (cl-ppcre:regex-replace-all "-" numberstring "-"))))))
       (when negative
 	(setf (first result) (- (first result))))
       result)))
 
-(defun interpret-svg-path (node attrs children)
-  (let* ((d (node-attribute node "d"))
-	 (d-nowhite (cl-ppcre:regex-replace-all "\\s+" d ""))
-	 (commands (remove-whitespace (cl-ppcre:split "([mMzZlLhHvVcCsSqQtTaA])" d
-						      :with-registers-p t
-						      :omit-unmatched-p nil)))
-	 (result))
+(defun interpret-svg-path (node attrs children &optional (cnt 2))
+  (let* ((d (cl-ppcre:regex-replace-all "z " (node-attribute node "d") "z 0,0 "))
+				 (d-nowhite (cl-ppcre:regex-replace-all "\\s+" d ""))
+				 (commands (remove-whitespace (cl-ppcre:split "([mMzZlLhHvVcCsSqQtTaA])" d
+																											:with-registers-p t
+																											:omit-unmatched-p nil)))
+				 (result))
 ;;    (format t "path commands: ~S~%" commandS)
     (let ((*svg-current-x* 0)
-	  (*svg-current-y* 0))
+					(*svg-current-y* 0)
+					(*svg-first-move* t)
+					(cur-path (list))
+					(res (list)))
       (remove nil
-	      (loop for (a b) on commands by #'cddr
-		 collect (interpret-svg-path-move a (when b (split-svg-numbers b))))))))
+							(loop for (a b) on commands by #'cddr
+									 for move = (interpret-svg-path-move a (when b (split-svg-numbers b)))
+									 do
+									 (progn
+										 (when (string= a "z")
+											 (format t "path: ~A~%" (length cur-path))
+											 (push cur-path res)
+											 (setf cur-path (list))))
+									 do (setf *svg-first-move* nil)
+									 do (if (listp move)
+													(setf cur-path (nconc cur-path move))
+													(setf cur-path (nconc cur-path (list move))))))
+			(format t "res: ~A ~A~%" (length res) nil)
+			(when (null cnt)
+				(setf cnt (length res)))
+;;			(setf *res* (apply #'concatenate 'list (nreverse res)))
+			(setf res (subseq (nreverse res) 0 cnt))
+			(apply #'concatenate 'list res)
+			)))
 
 (defun interpret-svg-node (node)
   (let ((name (node-name node))
@@ -302,19 +339,19 @@
   (walk-svg-node svg))
 
 (defun test-curve-svg (svg)
-    (with-program ("svg")
-      (with-tool (*default-tool*)
-	(with-named-pass ("svg")
-	  (let* ((curves (mapcar #'curve-to-arcs (interpret-svg (load-svg svg))))
-		 (wbbox (bounding-box curves)))
-	    (with-transform ((translation-matrix (- (2d-point-x (line-a wbbox)))
-						 (- (2d-point-y (line-a wbbox)))))
-	      (dolist (curve curves)
-		(goto-abs :z *fly-height*)
-		(let ((start (curve-start curve)))
-		  (goto-abs :x (2d-point-x start)
-			    :y (2d-point-y start)))
-		(with-tool-down ()
-		  (mill-curve curve)
-		  ))))))))
+	(with-program ("svg")
+		(with-tool (*default-tool*)
+			(with-named-pass ("svg")
+				(let* ((curves (mapcar #'curve-to-arcs (interpret-svg (load-svg svg))))
+							 (wbbox (bounding-box curves)))
+					(with-transform ((translation-matrix (- (2d-point-x (line-a wbbox)))
+																							 (- (2d-point-y (line-a wbbox)))))
+						(dolist (curve curves)
+							(goto-abs :z *fly-height*)
+							(let ((start (curve-start curve)))
+								(goto-abs :x (2d-point-x start)
+													:y (2d-point-y start)))
+							(with-tool-down ()
+								(mill-curve curve)
+								))))))))
 
