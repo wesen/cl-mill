@@ -135,7 +135,7 @@
 
 (defun update-svg-subpath (x y)
   (setf *svg-subpath-x* x
-	*svg-subpath-y* y))
+				*svg-subpath-y* y))
 
 (defun update-svg-prev-ctrl (x y)
   (setf *svg-prev-ctrl-x* x
@@ -161,9 +161,9 @@
 (defun interpret-svg-curveto (ux uy vx vy bx by)
   (prog1
       (make-bezier :a (2dp *svg-current-x* *svg-current-y*)
-		   :u (2dp ux uy)
-		   :v (2dp vx vy)
-		   :b (2dp bx by))
+									 :u (2dp ux uy)
+									 :v (2dp vx vy)
+									 :b (2dp bx by))
     (update-svg-current bx by)
     (update-svg-prev-ctrl vx vy)))
 
@@ -179,12 +179,15 @@
     (update-svg-prev-ctrl vx vy)))
 
 (defun interpret-svg-lineto (bx by)
-  (prog1 (make-line :a (2dp *svg-current-x* *svg-current-y*)
-		    :b (2dp bx by))
-    (update-svg-current bx by)))
+	(unless (and (= *svg-current-x* bx)
+							 (= *svg-current-y* by))
+		(prog1
+				(make-line :a (2dp *svg-current-x* *svg-current-y*)
+									 :b (2dp bx by))
+			(update-svg-current bx by))))
 
 (defun interpret-svg-path-move (cmd args)
-	(format t "cmd: ~A~%" cmd)
+;;	(format t "cmd: ~A ~A~%" cmd args)
   (cond ((string= cmd "M")
 				 (interpret-svg-moveto (svg-absolute-x (first args))
 															 (svg-absolute-y (second args)))
@@ -194,8 +197,10 @@
 				
 				((string= cmd "m")
 				 (if *svg-first-move*
-						 (interpret-svg-moveto (svg-absolute-x (first args))
-																	 (svg-absolute-y (second args)))
+						 (progn
+;;							 (format t "first move ~A~%" args)
+							 (interpret-svg-moveto (svg-absolute-x (first args))
+																		 (svg-absolute-y (second args))))
 						 (interpret-svg-moveto (svg-relative-x (first args))
 																	 (svg-relative-y (second args))))
 				 (loop for (f1 f2) on (cddr args) by #'cddr
@@ -203,6 +208,11 @@
 																					(svg-relative-y f2))))
 				
 				((string= cmd "C")
+				 (if *svg-first-move*
+						 (progn
+							 (interpret-svg-moveto (svg-absolute-x (first args))
+																		 (svg-absolute-y (second args)))))
+				 
 				 (loop for args2 on args by #'(lambda (x) (nthcdr 6 x))
 							collect 
 							(interpret-svg-curveto (svg-absolute-x (first args2))
@@ -213,6 +223,9 @@
 																		 (svg-absolute-y (sixth args2)))))
 				
 				((string= cmd "c")
+				 (if *svg-first-move*
+						 (interpret-svg-moveto (svg-absolute-x (first args))
+																	 (svg-absolute-y (second args))))
 				 (loop for args2 on args by #'(lambda (x) (nthcdr 6 x))
 							collect 
 							(interpret-svg-curveto (svg-relative-x (first args2))
@@ -256,6 +269,7 @@
 				 (interpret-svg-lineto *svg-current-x* (svg-relative-y (first args))))
 				
 				((string= cmd "z")
+;;				 (format t "closing ~A ~A~%" *svg-subpath-x* *svg-subpath-y*)
 				 (interpret-svg-lineto *svg-subpath-x* *svg-subpath-y*))
 				
 				(t (format t "unknown path: ~A ~A~%" cmd args))))
@@ -273,7 +287,7 @@
 	(setf (first result) (- (first result))))
       result)))
 
-(defun interpret-svg-path (node attrs children &optional (cnt 2))
+(defun interpret-svg-path (node attrs children &optional (cnt nil))
   (let* ((d (cl-ppcre:regex-replace-all "z " (node-attribute node "d") "z 0,0 "))
 				 (d-nowhite (cl-ppcre:regex-replace-all "\\s+" d ""))
 				 (commands (remove-whitespace (cl-ppcre:split "([mMzZlLhHvVcCsSqQtTaA])" d
@@ -288,18 +302,27 @@
 					(res (list)))
       (remove nil
 							(loop for (a b) on commands by #'cddr
-									 for move = (interpret-svg-path-move a (when b (split-svg-numbers b)))
-									 do
+								 for move = (interpret-svg-path-move a (when b (split-svg-numbers b)))
+								 do
 									 (progn
 										 (when (string= a "z")
-											 (format t "path: ~A~%" (length cur-path))
+											 ;;(format t "path: ~A~%" (length cur-path))
 											 (push cur-path res)
 											 (setf cur-path (list))))
-									 do (setf *svg-first-move* nil)
-									 do (if (listp move)
-													(setf cur-path (nconc cur-path move))
-													(setf cur-path (nconc cur-path (list move))))))
-			(format t "res: ~A ~A~%" (length res) nil)
+								 finally  (progn
+;;														(format t "closing ~A~%" commands)
+														(let ((move (interpret-svg-path-move "z" nil)))
+															(if (listp move)
+																	(setf cur-path (nconc cur-path move))
+																	(setf cur-path (nconc cur-path (list move)))))
+														 (push cur-path res)
+														 (setf cur-path (list))
+														 (setf *svg-first-move* t))
+								 do (setf *svg-first-move* nil)
+								 do (if (listp move)
+												(setf cur-path (nconc cur-path move))
+												(setf cur-path (nconc cur-path (list move))))))
+;;			(format t "rqes: ~A ~A~%" (length res) res)
 			(when (null cnt)
 				(setf cnt (length res)))
 ;;			(setf *res* (apply #'concatenate 'list (nreverse res)))
@@ -309,23 +332,25 @@
 
 (defun interpret-svg-node (node)
   (let ((name (node-name node))
-	(attrs (node-attributes node))
-	(children (node-children node)))
+				(attrs (node-attributes node))
+				(children (node-children node)))
     (cond ((string= name "path")
-	   (interpret-svg-path node attrs children))
-	  ((string= name "g")
-	   (remove nil
-		   (loop for child in (node-children node)
-		      appending (interpret-svg-node child))))
-	  (t (format t "unknown node: ~A~%" name)))))
+					 (list (interpret-svg-path node attrs children)))
+					((string= name "g")
+					 (remove nil
+									 (loop
+											for child in (node-children node)
+											appending (interpret-svg-node child))))
+					(t (format t "unknown node: ~A~%" name)))))
 
 (defun interpret-svg (svg)
   (unless (string= (node-name svg) "svg")
     (error "not an svg file!"))
   (remove nil
-	  (loop for child in (node-children svg)
-	     collect (interpret-svg-node child))))
-  
+	  (loop
+			 for child in (node-children svg)
+	     appending (interpret-svg-node child))))
+
 (defun walk-svg-node (node)
   (format t "node: ~A~%" (node-name node))
   (dolist (attribute (node-attributes node))
@@ -338,20 +363,23 @@
     (error "not an svg file!"))
   (walk-svg-node svg))
 
-(defun test-curve-svg (svg)
-	(with-program ("svg")
-		(with-tool (*default-tool*)
-			(with-named-pass ("svg")
+(defun svg-pass (svg &key depth)
 				(let* ((curves (mapcar #'curve-to-arcs (interpret-svg (load-svg svg))))
 							 (wbbox (bounding-box curves)))
-					(with-transform ((translation-matrix (- (2d-point-x (line-a wbbox)))
-																							 (- (2d-point-y (line-a wbbox)))))
-						(dolist (curve curves)
-							(goto-abs :z *fly-height*)
-							(let ((start (curve-start curve)))
-								(goto-abs :x (2d-point-x start)
-													:y (2d-point-y start)))
-							(with-tool-down ()
-								(mill-curve curve)
-								))))))))
+					(with-transform ((scaling-matrix 1))
+						(with-transform ((translation-matrix (- (2d-point-x (line-a wbbox)))
+																								 (- (2d-point-y (line-a wbbox)))))
+							(dolist (curve curves)
+									(mill-curve curve :depth depth)
+									)))))
 
+(defun svg-panel (svg &key depth)
+	(let ((panel (calculate-panel-code `((with-named-pass ("svg") (svg-pass ,svg :depth ,depth))))))
+		panel))
+	
+
+(defun test-curve-svg (svg)
+	(with-program ("svg")
+		(with-tool ((make-instance 'tool :depth 2 :diameter 2 :number 15))
+			(with-named-pass ("svg")
+				(svg-pass svg)))))

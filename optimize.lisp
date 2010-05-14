@@ -173,19 +173,19 @@
   (let ((result))
       (loop for movement in movements
 	   for start = (movement-start movement)
-	 do (push `(:g00 :x ,(point-x start) :y ,(point-y start) :f
-			 ,(tool-feed-xy *current-tool*))
+	 do (push `(:g00 (:x ,(point-x start)) (:y ,(point-y start)) (:f
+			 ,(tool-feed-xy *current-tool*)))
 		  result)
 	   (loop for move in (movement-moves movement)
 		do (push move result))
-	   (push `(:g00 :z ,height :f ,(tool-feed-z *current-tool*))
-		 result))
+					 (push `(:g00 (:z ,height) (:f ,(tool-feed-z *current-tool*)))
+								 result))
       (nreverse result)))
 
 (defmethod optimize-program-pass (program name)
   (let ((pass (program-pass program name)))
     (setf (pass-moves pass)
-	  (optimize-path (pass-moves pass)))))
+					(optimize-path (pass-moves pass)))))
 
 (defun optimize-current-pass ()
   (optimize-program-pass *current-program* (pass-name *current-pass*)))

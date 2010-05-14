@@ -82,7 +82,7 @@
 										 (* (- x4 x3) (- y2 y1))))
 					 (ua (unless (= denum 0)
 								 (/ num denum))))
-			;;      (format t "num: ~A denum: ~A ua: ~A~%" num denum ua)
+			;; (format t "num: ~A denum: ~A ua: ~A~%" num denum ua)
       (cond ((and (= num 0) (= denum 0))
 						 :parallel)
 						((= denum 0)
@@ -162,16 +162,18 @@
 (defun bezier-biarc (bezier)
   (with-slots (a u v b) bezier
     (let* ((inter (line-intersection a u b v))
-	   (g (when inter (incenter a inter b))))
+					 (g (when inter (incenter a inter b))))
       (when (null inter)
-	(warn "no intersection of bezier control lines: ~A~%" bezier))
+				(warn "no intersection of bezier control lines: ~A~%" bezier))
       (when g (circle-through-3-points a b g)))))
 
 (defun bezier-biarc-angle (bezier)
   (with-slots (a b) bezier
     (let ((center (bezier-biarc bezier)))
 ;;      (format t "center: ~A~%" center)
-      (radians-to-deg (angle-2-segments (make-line :a center :b a)
+			(unless center
+				(setf center a))
+			(radians-to-deg (angle-2-segments (make-line :a center :b a)
 																				(make-line :a center :b b))))))
 
 (defun test-biarc ()
@@ -219,8 +221,8 @@
     (point-/ (point-- b a) (line-length s1))))
 
 (defun angle-2-segments (s1 s2)
-  (acos (min 1 (dot-product (normalize-vector s1)
-														(normalize-vector s2)))))
+  (acos (max -1 (min 1 (dot-product (normalize-vector s1)
+																		(normalize-vector s2))))))
 
 (defun angle-2-segments-directed (s1 s2)
   ;; winkel < 180 > -180

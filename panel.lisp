@@ -30,7 +30,8 @@
 
 (defun calculate-panel (function-name)
   ;; new program XXX
-  (let* ((*current-program* (make-instance 'gcode-program :name "calculate shit")))
+  (let ((*current-program* (make-instance 'gcode-program :name "calculate shit"))
+				(*current-transform* *unity-matrix*))
 		(format t "current -program: ~A~%" *current-program*)
 		(with-named-pass ("foobar")
 			(funcall (symbol-function function-name)))
@@ -51,18 +52,22 @@
 								 :code `(with-named-pass ("mill") (,function-name))))))
 
 (defun calculate-panel-code (code &key passname)
-  (let ((*current-program* (make-instance 'gcode-program :name "calculate shit")))
+  (let ((*current-program* (make-instance 'gcode-program :name "calculate shit"))
+				(*current-transform* *unity-matrix*))
     (with-new-pass ("calculate pass")
-      (let ((res (with-save-xy () (eval `(progn ,@code)))))
+      (let* ((*gcode-program* (list))
+						 (*gcode-log* t))
+				(with-save-xy () (eval `(progn ,@code)))
 				(make-instance 'panel :name "code"
-											 :gcode res
+											 :gcode (nreverse *gcode-program*)
 											 :min-x (program-min-x) :max-x (program-max-x)
 											 :min-y (program-min-y) :max-y (program-max-y)
 											 :min-z (program-min-z) :max-z (program-max-z)
 											 :code `(with-named-pass (,(if passname passname "mill")) ,@code))))))
 
 (defun calculate-panel-file (filename)
-  (let ((*current-program* (make-instance 'gcode-program :name "calculate shit")))
+  (let ((*current-program* (make-instance 'gcode-program :name "calculate shit"))
+				(*current-transform* *unity-matrix*))
     (with-new-pass ("calculate pass")
       (let ((res (with-save-xy () (load-file filename))))
 				(make-instance 'panel :name (pathname-name filename)
@@ -73,15 +78,16 @@
 											 :code `(load-file ,filename))))))
 
 (defmacro with-panel ((name) &rest body)
-  `(let ((*current-program* (make-instance 'gcode-program :name "calculate shit")))
+  `(let ((*current-program* (make-instance 'gcode-program :name "calculate shit"))
+				 (*current-transform* *unity-matrix*))
      (with-new-pass ("calculate pass")
        (let ((res (with-save-xy () ,@body)))
-	 (make-instance 'panel :name ,name
-			:gcode res
-			:min-x (min-x) :max-x (max-x)
-			:min-y (min-y) :max-y (max-y)
-			:min-z (min-z) :max-z (max-z)
-			:code '(progn ,@body))))))
+				 (make-instance 'panel :name ,name
+												:gcode res
+												:min-x (min-x) :max-x (max-x)
+												:min-y (min-y) :max-y (max-y)
+												:min-z (min-z) :max-z (max-z)
+												:code '(progn ,@body))))))
      
 
 (defmethod panel-width ((panel panel))
@@ -96,6 +102,14 @@
       (mill-abs :z *fly-height*)
       (goto-abs :x 0 :y 0)
       (eval (panel-code panel)))))
+
+
+(defmethod execute-panel-gcode ((panel panel))
+  (with-save-xy ()
+      (mill-abs :z *fly-height*)
+      (goto-abs :x 0 :y 0)
+			(dolist (cmd (panel-gcode panel))
+				(eval cmd))))
 
 (defun panels-max-width (panels)
   (reduce #'max (mapcar #'panel-width panels)))

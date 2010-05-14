@@ -161,7 +161,7 @@
       (incf len (object-length (first segs)))
       (push (first segs) col))))
 
-(defun mill-curve (curve &key depth (scale 1) (ramp t))
+(defun mill-curve (curve &key depth (scale 1) (ramp nil))
   (let ((point (object-start-point (first curve))))
     (with-transform ((scaling-matrix scale))
       (tool-up)
@@ -170,9 +170,9 @@
   (if ramp
       (repeat-for-depth-ramp curve (or depth (tool-depth *current-tool*)))
       (repeat-for-depth ((or depth (tool-depth *current-tool*)))
-			(with-transform ((scaling-matrix scale))
-			  (dolist (seg curve)
-			    (mill-segment seg))))))
+												(with-transform ((scaling-matrix scale))
+													(dolist (seg curve)
+														(mill-segment seg))))))
 
 (defun test-circle (radius)
   (list
@@ -213,19 +213,6 @@
 
 	  )))))
 
-
-
-(defparameter *plywood-board-tool*
-  (make-instance 'tool
-		 :diameter 1
-		 :number 6
-		 :feed-xy 600
-		 :feed-z 240
-		 :depth 2))
-
-
-(defparameter *trace-tool*
-  *plywood-board-tool*)
 
 
 (defun interpret-potrace (potrace)

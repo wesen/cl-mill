@@ -54,13 +54,13 @@
 
 (defun mirror-matrix (p1)
   (let ((res (make-array '(3 3) :initial-element 0))
-	(x (2d-point-x p1))
-	(y (2d-point-y p1)))
+				(x (2d-point-x p1))
+				(y (2d-point-y p1)))
     (setf (aref res 2 2) 1
-	  (aref res 0 0) (- (square x) (square y))
-	  (aref res 0 1) (* 2 x y)
-	  (aref res 1 0) (* 2 x y)
-	  (aref res 1 1) (- (square y) (square x)))
+					(aref res 0 0) (- (square x) (square y))
+					(aref res 0 1) (* 2 x y)
+					(aref res 1 0) (* 2 x y)
+					(aref res 1 1) (- (square y) (square x)))
     (matrix-scale res (/ 1 (+ (square x) (square y))))))
 
 (defun translation-matrix (x y)

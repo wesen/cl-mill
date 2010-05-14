@@ -80,13 +80,6 @@
 ;; distance between drills: 109.5, 84.2
 ;; outer dimensions: 119.0, 93.5, 34.0
 
-(defparameter *mdf-tool-2mm*
-  (make-instance 'tool
-		 :diameter 2
-		 :number 10
-		 :depth 3))
-		 
-
 (defun woehr-gehauese-090 ()
   (with-tool (*mdf-tool-2mm*)
     (spindle-on)

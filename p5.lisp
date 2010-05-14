@@ -1,19 +1,21 @@
 (in-package :gcode)
 
+(defvar *p5-depth* nil)
+
 (defun p5-point (&key x y z)
   (fly-to :x x :y y)
-  (with-tool-down ())
+  (with-tool-down (*p5-depth*))
   )
 
 (defun p5-line (&key x1 y1 z1 x2 y2 z2)
   (fly-to :x x1 :y y1)
-  (with-tool-down ()
+  (with-tool-down (*p5-depth*)
     (mill-abs :x x2 :y y2))
   )
 
 (defun p5-triangle (&key x1 y1 x2 y2 x3 y3)
   (fly-to :x x1 :y y1)
-  (with-tool-down ()
+  (with-tool-down (*p5-depth*)
     (mill-abs :x x2 :y y2)
     (mill-abs :x x3 :y y3)
     (mill-abs :x x1 :y y1))
@@ -21,7 +23,8 @@
 
 (defun p5-quad (&key x1 y1 x2 y2 x3 y3 x4 y4)
   (fly-to :x x1 :y y1)
-  (with-tool-down ()
+  (with-tool-down (*p5-depth*)
+		(format t "p5 depth: ~A~%" (current-z))
     (mill-abs :x x2 :y y2)
     (mill-abs :x x3 :y y3)
     (mill-abs :x x4 :y y4)

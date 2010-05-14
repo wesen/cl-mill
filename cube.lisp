@@ -196,13 +196,6 @@
     (format t "rectangle for ~A: x: ~A, y: ~A, width: ~A~%" name
 						inner-x inner-y inner-width)))
 
-(defparameter *cube-tool*
-  (make-instance 'tool
-								 :diameter 1
-								 :feed-xy 600
-								 :feed-z 240
-								 :depth 4.0))
-
 (defun make-cube (&key (x 5) (y 5))
   (let* ((*step-width* 3.8)
 				 (*tool-diameter* 2)
@@ -279,8 +272,92 @@
 (defun cube-inner-width ()
 	(* 2 (+ 1 *cube-steps*) *step-width*))
 
+(defun haye-interior ()
+	(with-inner-transformation ()
+		(with-transform ((scaling-matrix (/ (cube-inner-width) 480)))
+			(let ((*p5-depth* 4))
+				(p5-rect :x 80 :y 400 :width 320 :height 20)
+
+				(p5-rect :x 30 :y 20 :width 20 :height 320)
+				(p5-rect :x 430 :y 20 :width 20 :height 320))
+			
+			(let ((*p5-depth* 2))
+				(p5-rect :x 160 :y 300 :width 160 :height 20)
+				
+				(p5-rect :x 130 :y 20 :width 20 :height 220)
+				(p5-rect :x 330 :y 20 :width 20 :height 220)
+				
+				(p5-rect :x 220 :y 160 :width 40 :height 40)
+				))
+			
+
+			
+			))
+
+(defun flo-interior ()
+		(with-inner-transformation ()
+			(with-transform ((scaling-matrix (/ (cube-inner-width) 480)))
+				(let ((*p5-depth* 4))
+					(loop 
+						 for i from 80 below 440 by 80
+						 for j from 1
+						 do (if (oddp j)
+										(progn (p5-rect :x (- i 20) :y 40 :width 40 :height 400))
+										
+										(p5-line :x1 i :y1 40
+														 :x2 i  :y2 440)))))))
+
+(defun panel-interior (panel)
+	(with-inner-transformation ()
+		(let ((widest (+ 20 (max (panel-width panel)
+														 (panel-height panel)))))
+			(with-transform ((scaling-matrix (/ (cube-inner-width) widest)))
+				(format t "widest: ~A, min-x: ~A, width: ~A~%"
+								widest (panel-min-x panel)
+								(panel-width panel))
+				(format t "widest: ~A, min-y: ~A, height: ~A~%"
+								widest (panel-min-y panel)
+								(panel-height panel))
+				(with-transform ((translation-matrix (+ (- (panel-min-x panel))
+																								(/ (- widest (panel-width panel)) 2))
+																						 (+ (- (panel-min-y panel))
+																								(/ (- widest (panel-height panel)) 2))))
+					(execute-panel-gcode panel))))))
+
+(defun svg-interior (svg &key depth)
+	(let ((panel (svg-panel svg :depth depth)))
+		(panel-interior panel)))
+	
+
+
+(defparameter *spiral-counter* 0)
+
+(defparameter *spiral-hash* (make-hash-table))
+
+;; spiral 4, 12, 14, 17,  21,  22
+
+(defparameter *spiral-list* '())
+
+(defun spiral-interior ()
+	(with-tool-down ()
+		#+nil(let ((panel (calculate-panel-code `((spiral-pass 2)))))
+					 (setf (gethash (incf *spiral-counter*) *spiral-hash*) panel)
+					 (panel-interior panel))
+		#+nil(panel-interior (gethash (random-elt *spiral-list*) *spiral-hash*))
+		(panel-interior (pop *spiral-list-panels*))
+		))
+
 (defun interior ()
-	(weird-line-interior)
+	#+nil(svg-interior "/Users/manuel/illusion-orig.svg")
+	#+nil(spiral-interior)
+	#+nil(haye-interior)
+
+	#+nil(flo-interior)
+
+	#-nil(circles-interior)
+	
+	#+nil(weird-line-interior)
+	
   #+nil (let ((r (random 100)))
     (cond ((> r 70)
 					 (star-interior))
@@ -296,6 +373,33 @@
       (dotimes (i 30)
 				(let ((w (p5-random 10 100)))
 					(p5-ellipse :x (p5-random 400) :y (p5-random 400) :width w :height w))))))
+
+(defun random2 (low end)
+	(+ low (random (- end low))))
+
+(defun random-circles ()
+	(do ((circles (list))
+			 (cnt 0 (1+ cnt)))
+			((or (> cnt 8000)
+					 (= (length circles) 35)) circles)
+		(let* ((radius (random2 30 200))
+					(x (random2 (+ 30 (/ radius 2)) (- 440 (/ radius 2))))
+					(y (random2 (+ 30 (/ radius 2)) (- 440 (/ radius 2)))))
+			(when (every #'(lambda (circle)
+								 (let* ((x2 (car circle))
+												(y2 (cadr circle))
+												(r2 (caddr circle))
+												(d (distance x y x2 y2)))
+									 (> d (+ radius r2))))
+									 circles)
+				(push (list x y radius) circles)))))
+	
+
+(defun circles-interior ()
+	(with-inner-transformation ()
+		(with-transform ((scaling-matrix (/ (cube-inner-width) 480)))
+			(dolist (circle (random-circles))
+				(apply #'p5-circle circle)))))
 
 (defun line-interior ()
   (with-inner-transformation ()
@@ -359,7 +463,7 @@
 
 (defun s-cube-top ()
   (with-named-pass ("circles")
-    (interior))
+    #+nil(interior))
   (cube-top))
 
 (defun s-cube-1 ()
@@ -389,10 +493,48 @@
   (loop for f in '(s-cube-top s-cube-bottom s-cube-1 s-cube-2 s-cube-3 s-cube-4)
      collect (calculate-panel f)))
 
-(defun small-cube-schedule ()
-  (let ((*step-width* 3.8)
+(defun small-cube-2-lines (&key (steps 3))
+  (let ((*step-width* 4)
 				(*tool-diameter* 2)
-				(*cube-steps* 3))
+				(*cube-steps* steps))
+	(with-program ("small-cube-2-lines")
+		(with-tool (*cube-tool*)
+				(spindle-on)
+				(goto-abs :x 0 :y 0)
+				(goto-abs :z *fly-height*)
+
+				(format t "outer program: ~A~%" *current-program*)
+
+				(with-transform ((translation-matrix 10 10))
+					(let* ((panels (small-cube-panels))
+								 (orders (order-panels panels
+																			 '((1 2 3 4 5 6)) 
+																			 10)))
+						(with-transform ((translation-matrix 0 290))
+							(loop for order in orders
+								 for x = (second order)
+								 for y = (third order)
+								 for panel = (first order)
+								 do (with-named-pass ("drills")
+											(panel-drills x y panel))
+									 (schedule-panel panel x y)))
+						(with-transform ((translation-matrix 420 0))
+							(with-transform ((rotation-matrix -90))
+							(loop for order in orders
+								 for x = (second order)
+								 for y = (third order)
+								 for panel = (first order)
+								 do (with-named-pass ("drills")
+											(panel-drills x y panel))
+									 (schedule-panel panel x y))))))))))
+								
+					
+
+(defun small-cube-schedule (&key (steps 3) schedule)
+  (let ((*step-width* 4)
+				(*tool-diameter* 2)
+				(*cube-steps* steps))
+		(format t "cube width: ~A~%" (cube-width))
     (with-program ("small-cube")
       (with-tool (*cube-tool*)
 				(spindle-on)
@@ -404,13 +546,32 @@
 				(with-transform ((translation-matrix 10 10))
 					(let* ((panels (small-cube-panels))
 								 (orders (order-panels panels
-																			 (second
-																				(list '((1 2 3 4)
-																								(1 2 3 4)
-																								(5 6 1 2)
-																								(3 4 5 6))
-																							
-																							'((1 2 3 4 5 6))))
+																			 (if schedule
+																					 schedule
+																					 (elt (list '((1 2 3 4)
+																												(1 2 3 4)
+																												(5 6 1 2)
+																												(3 4 5 6))
+																											
+																											'((1 2 3 4 5 6))
+
+																											'((1 2 3 4)
+																												(1 2 3 4)
+																												(4 5 1 2)
+																												(3 4 5 6))
+																											
+																											'((5 6)
+																												(1 2 3 4))
+																											
+																											'((1 2 3 4 5 6)
+																												(1 2 3 4 5 6)
+																												(1 2 3 4 5 6))
+																											
+																											'(
+																												(1 2 3 4 5 6)
+																												(1 2 3 4 5 6)
+																												))
+																								2))
 																			 10)))
 						(format t "panels: ~A~%, orders: ~A~%" panels orders)
 						(loop for order in orders
@@ -419,7 +580,9 @@
 							 for panel = (first order)
 							 do (with-named-pass ("drills")
 										(panel-drills x y panel))
-							 (schedule-panel panel x y))))))))
+							 (schedule-panel panel x y))))
+
+				#+nil(optimize-pass "circles")))))
 
 
 (defun panel-drills (x y panel)
@@ -440,7 +603,7 @@
 
   
 (defun small-cube (&key (x 0) (y 0))
-  (let* ((*step-width* 3.8)
+  (let* ((*step-width* 8)
 				 (*tool-diameter* 2)
 				 (*cube-steps* 5)
 				 (*round-steps* nil)

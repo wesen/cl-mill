@@ -2,12 +2,6 @@
 
 ;; loet hilfen
 
-(defparameter *dick-holz-tool*
-  (make-instance 'tool
-		 :number 16
-		 :diameter 3
-		 :depth 3))
-
 (defun loethilfe ()
   (with-program ("loethilfe")
     (with-named-pass ("mill")

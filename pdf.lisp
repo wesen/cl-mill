@@ -73,57 +73,124 @@
 
   #+nil(format t "move ~A~%" move))
 
+(defun program-to-file-and-pdf (program file &key order)
+	(program-to-pdf program (make-pathname :type "pdf" :defaults file) :order order)
+	(program-to-file program (make-pathname :type "nc" :defaults file) :order order))
+
 (defun program-to-pdf (program file &key order)
   (let ((*current-x* 0)
-	(*current-y* 0))
+				(*current-y* 0)
+				(pdf:*compress-streams* nil))
     (unless order
       (setf order (mapcar #'pass-name (gcode-program-passes program))))
+		
     (unless (pathname-name file)
       (setf file (make-pathname :defaults file :name (gcode-program-name program)
-				:type "pdf")))
+																:type "pdf")))
+		
     (let ((bounds (make-array 4 :initial-element 0)))
       (setf (aref bounds 2) (* 2.8346457 (+ 60 (abs (- (program-max-x program)
-						     (program-min-x program)))))
-	    (aref bounds 3) (* 2.8346457 (+ 60 (abs (- (program-max-y program)
-						     (program-min-y program))))))
+																											 (program-min-x program)))))
+						(aref bounds 3) (* 2.8346457 (+ 60 (abs (- (program-max-y program)
+																											 (program-min-y program))))))
       (format t "bounds: ~A~%" bounds)
       (pdf:with-document ()
-	(pdf:with-page (:bounds bounds)
-	  (pdf:scale 2.8346457 2.8346457)
-	  (pdf:with-outline-level ((gcode-program-name program) (pdf:register-page-reference))
-	    (pdf:set-rgb-stroke 0 0 0)
-	    (pdf:set-rgb-fill 1 1 1)
-	    (pdf:set-line-width 0.1)
-	    (pdf:translate 30 30)
-	    
-	    (pdf:set-rgb-stroke 0 0 0)
-	    (pdf:set-rgb-fill 1 1 1)
-	    (pdf:set-line-width 0.1)
-	    ;;	  (move-to-pdf '(:G00 (:X 10) (:Y 10)))
-	    ;;	  (move-to-pdf '(:G02 (:X 10) (:Y -10) (:I 10) (:J 0)))
-	    #|
-	    (move-to-pdf '(:G00 (:X 10) (:Y 10)))
-	    (move-to-pdf '(:G01 (:X 50) (:Y 10) (:F 10)))
-	    (move-to-pdf '(:G01 (:X 50) (:Y 50) (:F 10)))
-	    (move-to-pdf '(:G01 (:X 10) (:Y 50) (:F 10)))
-	    (move-to-pdf '(:G01 (:X 10) (:Y 10) (:F 10)))
-	    (pdf:stroke)
-	    |#
-	    
-	    #|	  (move-to-pdf '(:G00 (:X 40) (:Y 23)))
-	    
-	    (MOVE-TO-PDF '(:G02 (:X 23) (:Y 40) (:Z -3) (:I 40) (:J 40) (:K -3) (:F 5)))
-	    (move-to-pdf '(:G02 (:X 40) (:Y 57) (:Z -3) (:I 40) (:J 40) (:K -3)))
-	    (move-to-pdf '(:G02 (:X 57) (:Y 40) (:Z -3) (:I 40) (:J 40) (:K -3)))
-	    (move-to-pdf '(:G02 (:X 40) (:Y 23) (:Z -3) (:I 40) (:J 40) (:K -3)))
-	    |#
-	    
-	    #-nil(let ((all-moves (loop for name in order
-				     for pass = (program-pass program name)
-				     for moves = (when pass (cons `(:m03) (pass-moves pass)))
-				     appending moves)))
-		   (g-to-pdf all-moves)
-		   (format t "saved ~A to ~A~%" order file))
-	    ))
-	(pdf:write-document file)))))
+				(pdf:with-page (:bounds bounds)
+					(pdf:scale 2.8346457 2.8346457)
+					(pdf:with-outline-level ((gcode-program-name program) (pdf:register-page-reference))
+						(pdf:set-rgb-stroke 0 0 0)
+						(pdf:set-rgb-fill 1 1 1)
+						(pdf:set-line-width 0.1)
+						(pdf:translate 30 30)
+						
+						(pdf:set-rgb-stroke 0 0 0)
+						(pdf:set-rgb-fill 1 1 1)
+						(pdf:set-line-width 0.1)
+						;;	  (move-to-pdf '(:G00 (:X 10) (:Y 10)))
+						;;	  (move-to-pdf '(:G02 (:X 10) (:Y -10) (:I 10) (:J 0)))
+						#|
+						(move-to-pdf '(:G00 (:X 10) (:Y 10)))
+						(move-to-pdf '(:G01 (:X 50) (:Y 10) (:F 10)))
+						(move-to-pdf '(:G01 (:X 50) (:Y 50) (:F 10)))
+						(move-to-pdf '(:G01 (:X 10) (:Y 50) (:F 10)))
+						(move-to-pdf '(:G01 (:X 10) (:Y 10) (:F 10)))
+						(pdf:stroke)
+						|#
+						
+						#|	  (move-to-pdf '(:G00 (:X 40) (:Y 23)))
+						
+						(MOVE-TO-PDF '(:G02 (:X 23) (:Y 40) (:Z -3) (:I 40) (:J 40) (:K -3) (:F 5)))
+						(move-to-pdf '(:G02 (:X 40) (:Y 57) (:Z -3) (:I 40) (:J 40) (:K -3)))
+						(move-to-pdf '(:G02 (:X 57) (:Y 40) (:Z -3) (:I 40) (:J 40) (:K -3)))
+						(move-to-pdf '(:G02 (:X 40) (:Y 23) (:Z -3) (:I 40) (:J 40) (:K -3)))
+						|#
+						
+						(let ((all-moves (loop for name in order
+																for pass = (program-pass program name)
+																for moves = (when pass (cons `(:m03) (pass-moves pass)))
+																appending moves)))
+							(g-to-pdf all-moves)
+							(format t "saved ~A to ~A~%" order file))
+						))
+				(pdf:write-document file))))
+	
+	(loop for passname in order
+		 do (program-to-pdf-pass program (make-pathname :defaults file :name (format nil "~A-~A" (pathname-name file)
+																																								 passname)
+																										:type "pdf")
+														 passname)))
+
+(defun program-to-pdf-pass (program file passname)
+  (let ((*current-x* 0)
+				(*current-y* 0)
+				(pdf:*compress-streams* nil))
+
+    (unless (pathname-name file)
+      (setf file (make-pathname :defaults file :name (format nil "~a-~a" (gcode-program-name program) passname)
+																:type "pdf")))
+		
+    (let ((bounds (make-array 4 :initial-element 0)))
+      (setf (aref bounds 2) (* 2.8346457 (+ 60 (abs (- (program-max-x program)
+																											 (program-min-x program)))))
+						(aref bounds 3) (* 2.8346457 (+ 60 (abs (- (program-max-y program)
+																											 (program-min-y program))))))
+      (format t "bounds: ~A~%" bounds)
+			
+      (pdf:with-document ()
+				(pdf:with-page (:bounds bounds)
+					(pdf:scale 2.8346457 2.8346457)
+					(pdf:with-outline-level ((gcode-program-name program) (pdf:register-page-reference))
+						(pdf:set-rgb-stroke 0 0 0)
+						(pdf:set-rgb-fill 1 1 1)
+						(pdf:set-line-width 0.1)
+						(pdf:translate 30 30)
+						
+						(pdf:set-rgb-stroke 0 0 0)
+						(pdf:set-rgb-fill 1 1 1)
+						(pdf:set-line-width 0.1)
+						;;	  (move-to-pdf '(:G00 (:X 10) (:Y 10)))
+						;;	  (move-to-pdf '(:G02 (:X 10) (:Y -10) (:I 10) (:J 0)))
+						#|
+						(move-to-pdf '(:G00 (:X 10) (:Y 10)))
+						(move-to-pdf '(:G01 (:X 50) (:Y 10) (:F 10)))
+						(move-to-pdf '(:G01 (:X 50) (:Y 50) (:F 10)))
+						(move-to-pdf '(:G01 (:X 10) (:Y 50) (:F 10)))
+						(move-to-pdf '(:G01 (:X 10) (:Y 10) (:F 10)))
+						(pdf:stroke)
+						|#
+						
+						#|	  (move-to-pdf '(:G00 (:X 40) (:Y 23)))
+						
+						(MOVE-TO-PDF '(:G02 (:X 23) (:Y 40) (:Z -3) (:I 40) (:J 40) (:K -3) (:F 5)))
+						(move-to-pdf '(:G02 (:X 40) (:Y 57) (:Z -3) (:I 40) (:J 40) (:K -3)))
+						(move-to-pdf '(:G02 (:X 57) (:Y 40) (:Z -3) (:I 40) (:J 40) (:K -3)))
+						(move-to-pdf '(:G02 (:X 40) (:Y 23) (:Z -3) (:I 40) (:J 40) (:K -3)))
+						|#
+						
+						(let ((all-moves (cons `(:m03) (pass-moves (program-pass program passname)))))
+							(g-to-pdf all-moves)
+							(format t "saved ~A to ~A~%" passname file))
+						))
+				(pdf:write-document file)))))
+	
   

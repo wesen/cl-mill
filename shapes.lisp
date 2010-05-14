@@ -3,19 +3,19 @@
 (defun rectangle (width height &key ccw)
   "Draws a rectangle of width WIDTH and height HEIGHT starting from current position."
   (let ((right (> width 0))
-	(up (> height 0)))
+				(up (> height 0)))
     ;; check if we are clockwise or not
     (unless (eql right up)
       (setf ccw (not ccw))))
   (if ccw
       (progn (mill-rel :x width :y 0)
-	     (mill-rel :x 0 :y height)
-	     (mill-rel :x (- width) :y 0)
-	     (mill-rel :x 0 :y (- height)))
+						 (mill-rel :x 0 :y height)
+						 (mill-rel :x (- width) :y 0)
+						 (mill-rel :x 0 :y (- height)))
       (progn (mill-rel :x 0 :y height)
-	     (mill-rel :x width :y 0)
-	     (mill-rel :x 0 :y (- height))
-	     (mill-rel :x (- width) :y 0))))
+						 (mill-rel :x width :y 0)
+						 (mill-rel :x 0 :y (- height))
+						 (mill-rel :x (- width) :y 0))))
 
 (defun rectangle-fill (width height offset &key ccw)
   (when (or (> offset width)
@@ -60,23 +60,34 @@
 
 ;; mills with going into object
 (defun rectangle-outline (width height &key (depth (tool-depth *current-tool*))
-			  ccw)
+													ccw)
   (let ((offset (/ (tool-diameter *current-tool*) 2.0)))
 	  
     (goto-rel :x (* -1 (sign width) offset)
-	      :y (* -1 (sign height) offset))
+							:y (* -1 (sign height) offset))
     (repeat-for-depth  (depth)
-       (rectangle (+ width offset) (+ height offset) :ccw ccw))))
+											 (rectangle (+ width offset) (+ height offset) :ccw ccw))))
+
+(defun rectangle-outline-xy (&key x y width height (depth (tool-depth *current-tool*))
+														 ccw)
+  (let ((offset (/ (tool-diameter *current-tool*) 2.0)))
+	  (goto-abs :x x :y y :z *fly-height*)
+    (goto-rel :x (* -1 (sign width) offset)
+							:y (* -1 (sign height) offset))
+    (repeat-for-depth  (depth)
+											 (rectangle (+ width (* 2 offset)) (+ height (* 2 offset)) :ccw ccw))))
+
 
 (defun rectangle-inline (width height &key (depth (tool-depth *current-tool*)) ccw)
   (let ((offset (/ (tool-diameter *current-tool*) 2.0)))
 	  
     (goto-rel :x (* 1 (sign width) offset)
 	      :y (* 1 (sign height) offset))
+		(format t "current tool ~A depth: ~A~%" *current-tool* (tool-depth *current-tool*))
     (repeat-for-depth (depth)
        (rectangle (- width (tool-diameter *current-tool*))
-		  (- height (tool-diameter *current-tool*))
-		  :ccw ccw))))
+									(- height (tool-diameter *current-tool*))
+									:ccw ccw))))
 
 (defun rectangle-mill (width height &key depth ccw)
   (let ((offset (/ (tool-diameter *current-tool*) 2.0)))
