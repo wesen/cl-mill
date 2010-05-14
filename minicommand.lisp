@@ -34,77 +34,82 @@
 (defun frontplate-element (&key name package x y angle)
   (with-named-pass ("frontplate")
     (cond ((or (string= package "3FTL06")
-	       (string= package "3FTL06-LED")
-	       (string= package "JOYSTICK"))
-	   (when *frontplate-top*
-	     (drill :x x :y y :diameter 2 :depth 0.5)))
-	  ((string= package "DISPLAY-TEXT-C1624A")
-	   (when *frontplate-top*
-	     ;; (with-named-pass ("display")
-	       (with-tool (*alu-tool*)
-		 (progn (goto-abs :x (- x 32.6) :y (- y 16.9))
-			(rectangle-inline 71.5 26.5 :depth *frontplate-depth*)))))
-	  
-	  #+nil((string= package "CI-11")
-	   (when *frontplate-top*
-	   (drill :x x :y y :diameter 2 :depth 0.5))))))
-    
+							 (string= package "3FTL06-LED")
+							 (string= package "JOYSTICK"))
+					 (when *frontplate-top*
+						 (drill :x x :y y :diameter 2 :depth 2.5)))
+					#+nil((string= package "DISPLAY-TEXT-C1624A")
+								(when *frontplate-top*
+									;; (with-named-pass ("display")
+									(with-tool (*alu-tool*)
+										(progn (goto-abs :x (- x 32.6) :y (- y 16.9))
+													 (rectangle-inline 71.5 26.5 :depth *frontplate-depth*)))))
+					
+					#+nil((string= package "CI-11")
+								(when *frontplate-top*
+									(drill :x x :y y :diameter 2 :depth 0.5))))))
+
 
 (defun frontplate-element (&key name package x y angle)
   (with-named-pass ("frontplate")
     (cond ((or (string= package "3FTL06")
-	       (string= package "3FTL06-LED"))
-	   (when *frontplate-top*
+							 (string= package "3FTL06-LED"))
+					 (when *frontplate-top*
 
-	     ;; test
-;;	     (drill :x x :y y :diameter 2 :depth 0.5)
-	     
-	     ;; real one
-	     (drill :x x :y y :diameter 10.5 :depth *frontplate-depth*)
-	     ))
-	  ((string= package "JOYSTICK")
-	   (drill :x x :y y :diameter 23 :depth *frontplate-depth*))
-	  ((string= package "CI-11")
-	   (when *frontplate-top*
-	   (drill :x x :y y :diameter 7.5 :depth *frontplate-depth*)))
-	  ((string= package "LED5MM")
-	   (when *frontplate-top*
-	   (drill :x x :y y :diameter 5.5 :depth *frontplate-depth*)))
-	  ((string= package "POWER")
-	   (when *frontplate-top*
-	     ;; orig
-	     (progn
-	       (goto-abs :x (- x 7.25) :y (- y 3.75))
-	       (rectangle-inline 14 7.5 :depth *frontplate-depth*)
-	       )))
-	  
-	  ((string= package "MAB5SH")
-	   (when *frontplate-side*
-	     #-debug
-	     (drill :x 11.5 :y (- x 1.0) :diameter 18.5 :depth *frontplate-depth*)
-
-	     #+debug
-	     (drill :x 11.5 :y (- x 1.0) :diameter 2 :depth 2)
-	     ))
-
-	  ((string= package "DCJ0202")
-	   (when *frontplate-side*
-	     #+nil
-	     (progn ;; orig
-	       (goto-abs :x 0 :y (+ y 5))
-	       (rectangle-inline 12 10 :depth *frontplate-depth*))
-
-	     #-debug
-	     (progn
-	       (goto-abs :x 1.2 :y (+ y 5))
-	       (rectangle-inline 11 9.5 :depth *frontplate-depth*))))
-	  
-	  ((string= package "DISPLAY-TEXT-C1624A")
-	   (when *frontplate-top*
-	     ;; (with-named-pass ("display")
-	       (with-tool (*alu-tool*)
-		 (progn (goto-abs :x (- x 32.6) :y (- y 16.9))
-			(rectangle-inline 71.5 26.5 :depth *frontplate-depth*))))))))
+						 (with-named-pass ("test")
+							 (drill :x x :y y :diameter 2 :depth *frontplate-depth*))
+						 
+						 ;; real one
+						 (drill :x x :y y :diameter 10.5 :depth *frontplate-depth*)
+						 ))
+					
+					((string= package "JOYSTICK")
+					 (drill :x x :y y :diameter 23 :depth *frontplate-depth*))
+					
+					((string= package "CI-11")
+					 (when *frontplate-top*
+						 (drill :x x :y y :diameter 7.5 :depth *frontplate-depth*)
+						 (with-named-pass ("test")
+							 (drill :x x :y y :diameter 2 :depth 0.5))))
+					
+					((string= package "LED5MM")
+					 (when *frontplate-top*
+						 (drill :x x :y y :diameter 5.5 :depth *frontplate-depth*)))
+					((string= package "POWER")
+					 (when *frontplate-top*
+						 ;; orig
+						 (progn
+							 (goto-abs :x (- x 7.25) :y (- y 3.75))
+							 (rectangle-inline 14 7.5 :depth *frontplate-depth*)
+							 )))
+					
+					((string= package "MAB5SH")
+					 (when *frontplate-side*
+						 #-debug
+						 (drill :x 11.5 :y (- x 1.0) :diameter 18.5 :depth *frontplate-depth*)
+						 
+						 (with-named-pass ("test")
+							 (drill :x 11.5 :y (- x 1.0) :diameter 18.5 :depth 0.5))
+						 ))
+					
+					((string= package "DCJ0202")
+					 (when *frontplate-side*
+						 #+nil
+						 (progn ;; orig
+							 (goto-abs :x 0 :y (+ y 5))
+							 (rectangle-inline 12 10 :depth *frontplate-depth*))
+						 
+						 #-debug
+						 (progn
+							 (goto-abs :x 1.2 :y (+ y 5))
+							 (rectangle-inline 11 9.5 :depth *frontplate-depth*))))
+					
+					((string= package "DISPLAY-TEXT-C1624A")
+					 (when *frontplate-top*
+						 ;; (with-named-pass ("display")
+						 (with-tool (*alu-tool*)
+							 (progn (goto-abs :x (- x 32.6) :y (- y 16.9))
+											(rectangle-inline 71.5 26.5 :depth *frontplate-depth*))))))))
 
 (defun test-file (&key (x 0) (y 0))
   (let ((*frontplate-elements* nil))
@@ -149,48 +154,55 @@
 (defparameter *alu-tool*
   (make-instance 'tool :diameter 2 :depth 2.6 :number 8 :feed-xy 500 :feed-z 100))
 
+;; FUER FROTPLATTEN
+(defparameter *alu-tool*
+  (make-instance 'tool :diameter 2 :depth 1.3 :number 8 :feed-xy 500 :feed-z 100))
+
+
 (defun minicommand-casing-side-top-hammond-first ()
   (let ((tool *alu-tool*)
-	(*frontplate-depth* 3.3))
+				(*frontplate-depth* 3.3))
     (with-program ("casing")
       (with-named-pass ("frontplate")
-	(with-tool (tool)
-	  (goto-abs :x 0 :y 0)
-	  (goto-abs :z *fly-height*)))
+				(with-tool (tool)
+					(goto-abs :x 0 :y 0)
+					(goto-abs :z *fly-height*)))
       
       
-	(with-named-pass ("mill")
-	  (with-tool (*alu-tool*)
-	    (with-transform ((translation-matrix 2.1 8.5))
-	      (let ((*eagle-drills-p* nil)
-		    (*frontplate-top* nil)
-		    (*frontplate-side* t))
-		(load-file "/Users/manuel/siff-svn/ruinwesen/eagle/midicommand/minicommand.lisp"))))))))
-    
+			(with-named-pass ("mill")
+				(with-tool (*alu-tool*)
+					(with-transform ((translation-matrix 2.1 8.5))
+						(let ((*eagle-drills-p* nil)
+									(*frontplate-top* nil)
+									(*frontplate-side* t))
+							(load-file "/Users/manuel/siff-svn/ruinwesen/eagle/midicommand/minicommand.lisp"))))))))
 
 (defun minicommand-casing-side-top ()
   (let ((tool *alu-tool-top*)
-	(*frontplate-depth* 3.2))
+	(*frontplate-depth* 3.4))
 	
     (with-program ("casing")
       (with-named-pass ("umrandung")
-	(goto-abs :x 0 :y 0)
-	(rectangle 30 119))
-
+				(goto-abs :x 0 :y 0)
+				(rectangle 30 119))
+			
       (with-named-pass ("frontplate")
-	(with-tool (tool)
-	  (goto-abs :x 0 :y 0)
-	  (goto-abs :z *fly-height*)))
-      
-      
-
-	(with-named-pass ("mill")
-	  (with-tool (*alu-tool-top*)
-	  (with-transform ((translation-matrix 6.5 4)) ;; 4 pcb zu rand + 1
-	    (let ((*eagle-drills-p* nil)
-		  (*frontplate-top* nil)
-		  (*frontplate-side* t))
-	      (load-file "/Users/manuel/siff-svn/ruinwesen/eagle/midicommand/minicommand.lisp"))))))))
+				(with-tool (tool)
+					(goto-abs :x 0 :y 0)
+					(goto-abs :z *fly-height*)))
+ 
+      (with-named-pass ("test")
+				(with-tool (tool)
+					(goto-abs :x 0 :y 0)
+					(goto-abs :z *fly-height*)))
+     
+			(with-named-pass ("mill")
+				(with-tool (*alu-tool-top*)
+					(with-transform ((translation-matrix 6.5 4)) ;; 4 pcb zu rand + 1
+						(let ((*eagle-drills-p* nil)
+									(*frontplate-top* nil)
+									(*frontplate-side* t))
+							(load-file "/Users/manuel/siff-svn/ruinwesen/eagle/midicommand/minicommand.lisp"))))))))
 
 (defun cpu-pcb-drills ()
   (with-named-pass ("drills")
@@ -523,10 +535,15 @@
   
 
 (defun minicommand-frontplate (tool)
-      (with-named-pass ("frontplate")
-	(with-tool (tool)
-	  (goto-abs :x 0 :y 0)
-	  (goto-abs :z *fly-height*)))
+	(with-named-pass ("frontplate")
+		(with-tool (tool)
+			(goto-abs :x 0 :y 0)
+			(goto-abs :z *fly-height*)))
+	
+	(with-named-pass ("test")
+		(with-tool (tool)
+			(goto-abs :x 0 :y 0)
+			(goto-abs :z *fly-height*)))
       
       (with-tool (tool)
 	(with-transform ((translation-matrix 2.8 -0.75))
@@ -579,6 +596,10 @@
 
 
 	    ))
+
+(defun single-minicommand ()
+	(with-program ("casing")
+		(minicommand-frontplate *alu-tool*)))
 
 (defun test-minicommand-casing-weit (&optional (start 0))
   (let ((tool *alu-tool*))

@@ -3,17 +3,13 @@
 
 (in-package :gcode-system)
 
-(defsystem :gcode
+(defsystem :gcode2
   :name "GCODE"
   :author "Manuel Odendahl <wesen@ruinwesen.com>"
   :version "0.1"
   :maintainer "Manuel Odendahl <wesen@ruinwesen.com>"
   :serial t
-  :depends-on (#+nil :cl-gd
-	       :uffi
-	       #+nil :cocoahelper
-	       #+nil :lispbuilder-sdl
-	       :unit-test :cl-pdf :cxml :cl-ppcre)
+  :depends-on (:unit-test :cl-pdf :cxml :cl-ppcre)
   :components
   (
    ;; thirdparty
@@ -29,17 +25,20 @@
    (:file "geometry")
    (:file "arc")
    (:file "bezier")
-;;   (:file "offset")
+   (:file "offset")
+	 (:file "bbox")
 
    ;; potrace externals
-   (:file "pot-uffi")
+   #+nil(:file "pot-uffi")
 
    ;; gcode
    (:file "gcode")
    (:file "opcodes")
 
+	 (:file "tools")
+
    ;; tracer
-;;   (:file "potrace")
+   (:file "potrace")
 
    ;; panelizing and stuff
    (:file "shapes")
@@ -47,7 +46,7 @@
    (:file "panel")
    (:file "cube")
 
-  ;; (:file "raster")
+   (:file "raster")
 
    ;; optimizer
    (:file "optimize")
@@ -60,7 +59,5 @@
    (:file "p5")
    (:file "pdf")
    (:file "svg")
-
-   (:file "minicommand")
 
    ))

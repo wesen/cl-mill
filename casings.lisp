@@ -1,4 +1,4 @@
-.(in-package :gcode)
+(in-package :gcode)
 
 (defun hammond-29830-psla ()
   (with-program ("hammond-29830")
@@ -96,9 +96,9 @@
     (with-named-pass ("outline")
   (with-tool (*mdf-tool-2mm*)
       (goto-abs :x 0 :y 0)
-      (rectangle-inline 93.5 119 :depth 1)
+      (rectangle-inline 93.5 119 :depth 2)
       (goto-abs :x 0.7 :y 0.7)
-      (rectangle-inline (- 93.5 1.4) (- 119 1.4) :depth 1)))
+      (rectangle-inline (- 93.5 1.4) (- 119 1.4) :depth 2)))
     
     (with-named-pass ("drills")
   (with-tool (*mdf-tool-2mm*)
@@ -130,6 +130,24 @@
 	  (drill :y (- 119 5) :x 4.65        :diameter 7 :depth 11)
 	  
 	  )))))
+
+(defun woehr-gehauese-090-rueckwaerts-drills2 ()
+  (with-tool (*mdf-tool-2mm*)
+    (spindle-on)
+    (goto-abs :x 0 :y 0)
+    (goto-abs :z *fly-height*)
+    
+    (with-named-pass ("drills")
+      (with-tool (*mdf-tool-2mm*)
+	(goto-abs :x 0 :y 0)
+	(goto-abs :z *fly-height*)
+
+	(drill :y 5         :x 4.65        :diameter 7 :depth 11)
+	(drill :y 5         :x (- 93.5 4.65) :diameter 7 :depth 11)
+	(drill :y (- 119 5) :x (- 93.5 4.65) :diameter 7 :depth 11) 
+	(drill :y (- 119 5) :x 4.65        :diameter 7 :depth 11)
+	
+	))))
 
 
 (defun woehr-090-program ()
@@ -204,5 +222,38 @@
 	  (with-transform ((translation-matrix 0 244))
 	    (woehr-gehauese-090-rueckwaerts-drills)))))))
   
+(defun woehr-090-platte-rueckwaerts2 ()
+  (with-program ("woehr")
+    (with-named-pass ("mill")
+      (with-tool (*mdf-tool-2mm*)
+				(with-transform ((translation-matrix -7 0))
+					(woehr-gehauese-090-rueckwaerts-drills2)
+					(with-transform ((translation-matrix 0 122))
+						(woehr-gehauese-090-rueckwaerts-drills2))
+					(with-transform ((translation-matrix 0 244))
+						(woehr-gehauese-090-rueckwaerts-drills2))
+					
+					(with-transform ((translation-matrix 105 0))
+						(woehr-gehauese-090-rueckwaerts-drills2)
+						(with-transform ((translation-matrix 0 122))
+							(woehr-gehauese-090-rueckwaerts-drills2))
+						(with-transform ((translation-matrix 0 244))
+							(woehr-gehauese-090-rueckwaerts-drills2)))
+					
+					(with-transform ((translation-matrix 210 0))
+						(woehr-gehauese-090-rueckwaerts-drills2)
+						(with-transform ((translation-matrix 0 122))
+							(woehr-gehauese-090-rueckwaerts-drills2))
+						(with-transform ((translation-matrix 0 244))
+							(woehr-gehauese-090-rueckwaerts-drills2)))
+					
+					(with-transform ((translation-matrix 315 0))
+						(woehr-gehauese-090-rueckwaerts-drills2)
+						(with-transform ((translation-matrix 0 122))
+							(woehr-gehauese-090-rueckwaerts-drills2))
+						(with-transform ((translation-matrix 0 244))
+							(woehr-gehauese-090-rueckwaerts-drills2))))))))
   
+  
+    
   

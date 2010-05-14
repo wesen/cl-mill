@@ -128,7 +128,7 @@
     (warn "Can not drill hole that is ~A big, resorting to ~A~%"
 	  diameter (tool-diameter *current-tool*))
     (setf diameter (tool-diameter *current-tool*)))
-  (format t "depth: ~A~%" depth)
+  #+nil(format t "depth: ~A~%" depth)
   (let ((d (/ (- diameter (tool-diameter *current-tool*)) 2)))
     (goto-abs :x x :y (- y d))
     (if (= d 0)
