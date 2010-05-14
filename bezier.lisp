@@ -271,14 +271,14 @@
   (if (bezier-parallel-p bezier)
       (list bezier)
       (let ((angle  (bezier-biarc-angle bezier))
-	    res)
-	(cond ((<= angle 90)
-	       (push bezier res))
-	      (t (let ((beziers (split-bezier bezier 0.5)))
-		   (dolist (b (mapcan #'split-bezier-biarc-angle beziers))
-		     (push b res)))))
-	(nreverse res))))
-  
+						res)
+				(cond ((<= angle 90)
+							 (push bezier res))
+							(t (let ((beziers (split-bezier bezier 0.5)))
+									 (dolist (b (mapcan #'split-bezier-biarc-angle beziers))
+										 (push b res)))))
+				(nreverse res))))
+
 
 (defun split-bezier-for-arc (bezier)
   (let ((beziers (split-at-inflection-points bezier))

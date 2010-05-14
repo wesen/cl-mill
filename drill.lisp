@@ -1,22 +1,5 @@
 (in-package :gcode)
 
-(defparameter *pcb-tool*
-  (make-instance 'tool
-		 :diameter 1
-		 :number 7
-		 :feed-xy 600
-		 :feed-z 240
-		 :depth 2.2))
-
-(defparameter *engrave-tool*
-  (make-instance 'tool
-		 :diameter 1
-		 :number 9
-		 :feed-xy 600
-		 :feed-z 240
-		 :depth 1.5))
-
-
 (defun pcb (file outfile)
   (program-to-file
    (with-program ("pcb")

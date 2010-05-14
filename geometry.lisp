@@ -69,27 +69,27 @@
 ;; intersection of two lines given by x1,y1 - x2 y2 and x3, y3 - x4, y4
 (defun line-intersection (p1 p2 p3 p4)
   (let ((x1 (2d-point-x p1))
-	(y1 (2d-point-y p1))
-	(x2 (2d-point-x p2))
-	(y2 (2d-point-y p2))
-	(x3 (2d-point-x p3))
-	(y3 (2d-point-y p3))
-	(x4 (2d-point-x p4))
-	(y4 (2d-point-y p4)))
+				(y1 (2d-point-y p1))
+				(x2 (2d-point-x p2))
+				(y2 (2d-point-y p2))
+				(x3 (2d-point-x p3))
+				(y3 (2d-point-y p3))
+				(x4 (2d-point-x p4))
+				(y4 (2d-point-y p4)))
     (let* ((num (- (* (- x4 x3) (- y1 y3))
-		   (* (- y4 y3) (- x1 x3))))
-	   (denum (- (* (- y4 y3) (- x2 x1))
-		     (* (- x4 x3) (- y2 y1))))
-	   (ua (unless (= denum 0)
-		 (/ num denum))))
-;;      (format t "num: ~A denum: ~A ua: ~A~%" num denum ua)
+									 (* (- y4 y3) (- x1 x3))))
+					 (denum (- (* (- y4 y3) (- x2 x1))
+										 (* (- x4 x3) (- y2 y1))))
+					 (ua (unless (= denum 0)
+								 (/ num denum))))
+			;; (format t "num: ~A denum: ~A ua: ~A~%" num denum ua)
       (cond ((and (= num 0) (= denum 0))
-	     :parallel)
-	    ((= denum 0)
-	     nil)
-	    (t
-	     (make-2d-point :x (+ x1 (* ua (- x2 x1)))
-			    :y (+ y1 (* ua (- y2 y1)))))))))
+						 :parallel)
+						((= denum 0)
+						 nil)
+						(t
+						 (make-2d-point :x (+ x1 (* ua (- x2 x1)))
+														:y (+ y1 (* ua (- y2 y1)))))))))
     
 (deftest :intersection "line intersection"
   (intersection-line (make-line :a (2dp 105 105) :b (2dp 105 108))
@@ -162,17 +162,19 @@
 (defun bezier-biarc (bezier)
   (with-slots (a u v b) bezier
     (let* ((inter (line-intersection a u b v))
-	   (g (when inter (incenter a inter b))))
+					 (g (when inter (incenter a inter b))))
       (when (null inter)
-	(warn "no intersection of bezier control lines: ~A~%" bezier))
+				(warn "no intersection of bezier control lines: ~A~%" bezier))
       (when g (circle-through-3-points a b g)))))
 
 (defun bezier-biarc-angle (bezier)
   (with-slots (a b) bezier
     (let ((center (bezier-biarc bezier)))
 ;;      (format t "center: ~A~%" center)
-      (radians-to-deg (angle-2-segments (make-line :a center :b a)
-					(make-line :a center :b b))))))
+			(unless center
+				(setf center a))
+			(radians-to-deg (angle-2-segments (make-line :a center :b a)
+																				(make-line :a center :b b))))))
 
 (defun test-biarc ()
   (let ((b1 (make-bezier :a (2dp 2 2) :u (2dp 1 5) :b (2dp 6 5) :v (2dp 4 7))))
@@ -219,8 +221,8 @@
     (point-/ (point-- b a) (line-length s1))))
 
 (defun angle-2-segments (s1 s2)
-  (acos (dot-product (normalize-vector s1)
-		     (normalize-vector s2))))
+  (acos (max -1 (min 1 (dot-product (normalize-vector s1)
+																		(normalize-vector s2))))))
 
 (defun angle-2-segments-directed (s1 s2)
   ;; winkel < 180 > -180

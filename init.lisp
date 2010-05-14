@@ -24,4 +24,4 @@ libpotrace")
 			  :force-load force-load
 			  :supporting-libraries '("potrace"))))
 
-(load-potrace)
+#+nil(load-potrace)

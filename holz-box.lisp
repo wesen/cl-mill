@@ -2,14 +2,6 @@
 
 (defparameter *kiefer-width* 4) ;; 4 mm kiefer holz
 
-(defparameter *kiefer-tool*
-  (make-instance 'tool
-		 :diameter 2
-		 :number 11
-		 :feed-xy 600
-		 :feed-z 240
-		 :depth 1.5))
-
 (defparameter *holz-box-wx* 32)
 (defparameter *holz-box-wy* 60)
 (defparameter *holz-box-height* 22)

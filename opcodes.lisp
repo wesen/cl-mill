@@ -127,10 +127,18 @@
   (let ((passes (gcode-program-passes program)))
     (reduce #'max (mapcar #'pass-max-z passes))))
 
+(defun program-width (&optional (program *current-program*))
+	(- (program-max-x program) (program-min-x program)))
+
+(defun program-height (&optional (program *current-program*))
+	(- (program-max-y program) (program-min-y program)))
+
+
 (defvar *current-program*)
 
 (defmacro with-program ((name) &rest body)
-  `(let ((*current-program* (make-instance 'gcode-program :name ,name)))
+  `(let ((*current-program* (make-instance 'gcode-program :name ,name))
+				 (*current-transform* *unity-matrix*))
      (with-named-pass ("mill")
        ,@body
        *current-program*)))
@@ -215,6 +223,9 @@
      (switch-tool (tool-number ,tool))
      ,@body))
 
+(defvar *gcode-program* nil)
+(defvar *gcode-log* nil)
+
 (defun add-gcode-move (move)
   (push move (pass-raw-moves *current-pass*))
   nil)
@@ -227,6 +238,26 @@
 
 (defun switch-tool (number)
   (add-gcode-move (list (make-keyword (format nil "T~A" number)))))
+
+
+(defun copy-pass (p1 &optional (name (pass-name p1)))
+	(let ((p2 (make-instance 'pass :name name)))
+		(loop for slot in '(current-x min-x max-x
+												current-y min-y max-y
+												current-z min-z max-z moves)
+				 do (setf (slot-value p2 slot)
+									(copy-tree (slot-value p1 slot))))
+		p2))
+
+(defun merge-programs (p1 p2)
+	(with-program ((format nil "merge ~A-~A" (gcode-program-name p1)
+												 (gcode-program-name p2)))
+		(loop for pass in (gcode-program-passes p1)
+				 for new-pass = (copy-pass pass (format nil "1-~A" (pass-name pass)))
+				 do (push new-pass (current-passes)))
+		(loop for pass in (gcode-program-passes p2)
+				 for new-pass = (copy-pass pass (format nil "2-~A" (pass-name pass)))
+				 do (push new-pass (current-passes)))))
 
 ;;; transform movements
 
@@ -260,6 +291,10 @@
   (let ((vec (transform-vector (or x (orig-current-x))
 			       (or y (orig-current-y))
 			       *current-transform*)))
+		(when *gcode-log*
+			(push `(goto ,@(unless (null x) `(:x ,(first vec)))
+									 ,@(unless (null y) `(:y ,(second vec)))
+									 ,@(unless (null z) `(:z ,z))) *gcode-program*))
     (update-current-coords (first vec) (second vec) z)
     (add-gcode-move `(:G00 ,@(when x `((:x ,(first vec))))
 			   ,@(when y `((:y ,(second vec))))
@@ -271,14 +306,20 @@
     (when *current-tool*
       (setf f (tool-feed-xy *current-tool*))))
   (let ((vec (transform-vector (or x (orig-current-x))
-			       (or y (orig-current-y))
-			       *current-transform*)))
+															 (or y (orig-current-y))
+															 *current-transform*)))
+		(when *gcode-log*
+			(push `(mill ,@(unless (null x) `(:x ,(first vec)))
+									 ,@(unless (null y) `(:y ,(second vec)))
+									 ,@(unless (null z) `(:z ,z))
+									 ,@(unless (null f) `(:f ,f)))
+									 *gcode-program*))
     (update-current-coords (first vec) (second vec) z)
     (add-gcode-move `(:G01 ,@(unless (null x) `((:x ,(first vec))))
-			   ,@(unless (null y) `((:y ,(second vec))))
-			   ,@(unless (null z) `((:z ,z)))
-			   ,@(unless (null f) `((:f ,f)))
-			   ,@(when cmt (comment cmt))))))
+													 ,@(unless (null y) `((:y ,(second vec))))
+													 ,@(unless (null z) `((:z ,z)))
+													 ,@(unless (null f) `((:f ,f)))
+													 ,@(when cmt (comment cmt))))))
 
 (defun arc-cw (&key x y z i j k f)
   (let ((vec (transform-vector (or x (orig-current-x))
@@ -287,6 +328,14 @@
 	(vec2 (transform-vector (or i (orig-current-x))
 				(or j (orig-current-y))
 				*current-transform*)))
+		(when *gcode-log*
+			(push `(arc-cw ,@(unless (null x) `(:x ,(first vec)))
+										 ,@(unless (null y) `(:y ,(second vec)))
+										 ,@(unless (null z) `(:z ,z))
+										 ,@(when i `(:i ,(first vec2)))
+										 ,@(when j `(:j ,(second vec2)))
+										 ,@(when k `(:k ,k))
+										 ,@(unless (null f) `(:f ,f))) *gcode-program*))
     ;; XXX bounding box better
     (update-current-coords (first vec) (second vec) z)
     (add-gcode-move `(:G02 ,@(when x `((:x ,(first vec))))
@@ -306,6 +355,14 @@
 	(vec2 (transform-vector (or i (orig-current-x))
 				(or j (orig-current-y))
 				*current-transform*)))
+		(when *gcode-log*
+			(push `(arc-ccw ,@(unless (null x) `(:x ,(first vec)))
+											,@(unless (null y) `(:y ,(second vec)))
+											,@(unless (null z) `(:z ,z))
+											,@(when i `(:i ,(first vec2)))
+											,@(when j `(:j ,(second vec2)))
+											,@(when k `(:k ,k))
+											,@(unless (null f) `(:f ,f))) *gcode-program*))
     (update-current-coords (first vec) (second vec) z)
     (add-gcode-move `(:G03 ,@(when x `((:x ,(first vec))))
 			   ,@(when y `((:y ,(second vec))))
@@ -321,8 +378,8 @@
 
 (defun goto-rel (&key (x 0) (y 0) (z 0))
   (goto-abs :x (+ (orig-current-x) x)
-	    :y (+ (orig-current-y) y)
-	    :z (+ (current-z) z)))
+						:y (+ (orig-current-y) y)
+						:z (+ (current-z) z)))
 
 (defun mill-abs (&key x y z f)
   (mill :x x :y y :z z :f f))
@@ -368,7 +425,7 @@
        ,@body
        (format t "x after ~A, y after: ~A~%" (orig-current-x) (orig-current-y))
        (goto-rel :x (- ,x (orig-current-x))
-		 :y (- ,y (orig-current-y))))))
+								 :y (- ,y (orig-current-y))))))
 	  
 
 ;; CORRECTION is:
@@ -381,21 +438,21 @@
 	(cury (gensym)))
   `(let ((nums (/ ,depth (tool-depth *current-tool*))))
      (if (> nums 1)
-	 (progn
-	   (loop for i from 0 below nums
-	      for curdepth from (tool-depth *current-tool*) by (tool-depth *current-tool*)
-	      do (tool-down :depth (min ,depth curdepth))
-		(let ((,curx (orig-current-x))
-		      (,cury (orig-current-y)))
-		  ,@body
-		  (unless (and (epsilon-= ,curx (orig-current-x))
-			       (epsilon-= ,cury (orig-current-y)))
-		    (tool-up)
-		    (goto-abs :x ,curx :y ,cury))))
-	   (tool-up))
-	 
-	 (with-tool-down (,depth)
-	   ,@body)))))
+				 (progn
+					 (loop for i from 0 below nums
+							for curdepth from (tool-depth *current-tool*) by (tool-depth *current-tool*)
+							do (tool-down :depth (min ,depth curdepth))
+								(let ((,curx (orig-current-x))
+											(,cury (orig-current-y)))
+									,@body
+									(unless (and (epsilon-= ,curx (orig-current-x))
+															 (epsilon-= ,cury (orig-current-y)))
+										(tool-up)
+										(goto-abs :x ,curx :y ,cury))))
+					 (tool-up))
+				 
+				 (with-tool-down (,depth)
+					 ,@body)))))
 
 (defparameter *fly-height* 2.5)
 
