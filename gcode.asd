@@ -32,7 +32,7 @@
 ;;   (:file "offset")
 
    ;; potrace externals
-   (:file "pot-uffi")
+;;   (:file "pot-uffi")
 
    ;; gcode
    (:file "gcode")
