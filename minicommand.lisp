@@ -52,14 +52,20 @@
 						 (drill :x 11.5 :y (- x 1.0) :diameter 18.5 :depth *frontplate-depth*)
 						 
 						 (with-named-pass ("test")
-							 (drill :x 11.5 :y (- x 1.0) :diameter 2 :depth 0.5))
+							 (drill :x 11.5 :y (- x 1.0) :diameter 2 :depth 1.5))
+						 (with-named-pass ("test2")
+							 (drill :x 11.5 :y (- x 1.0) :diameter 18.5 :depth 1.5))
 						 ))
 					
 					((string= package "DCJ0202")
 					 (when *frontplate-side*
 						 (with-named-pass ("test")
 							 nil)
-						 
+
+						 (with-named-pass ("test2")
+							 (progn
+								 (goto-abs :x 1.2 :y (+ y 5))
+								 (rectangle-inline 11 9.5 :depth 1.5)))
 						 #-debug
 						 (progn
 							 (goto-abs :x 1.2 :y (+ y 5))
@@ -99,6 +105,10 @@
 					(goto-abs :x 0 :y 0)
 					(goto-abs :z *fly-height*)))
       (with-named-pass ("test")
+				(with-tool (tool)
+					(goto-abs :x 0 :y 0)
+					(goto-abs :z *fly-height*)))
+      (with-named-pass ("test2")
 				(with-tool (tool)
 					(goto-abs :x 0 :y 0)
 					(goto-abs :z *fly-height*)))
