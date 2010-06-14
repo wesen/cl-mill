@@ -363,6 +363,22 @@
     (error "not an svg file!"))
   (walk-svg-node svg))
 
+(defun split-curves (curve)
+	(loop for (a b) on curve
+			 with res = (list)
+			 with current = (list)
+			 until (null b)
+			 for p1 = (curve-end a)
+			 for p2 = (curve-start b)
+			 do (push a current)
+		 unless (2d-point-equal p1 p2)
+		 do
+;;			 (format t "~A -> ~A: ~A~%" p1 p2 (2d-point-equal p1 p2))
+			 (push (nreverse current) res)
+			 (setf current (list))
+		 finally (return res)))
+			 
+
 (defun svg-pass (svg &key depth)
 				(let* ((curves (mapcar #'curve-to-arcs (interpret-svg (load-svg svg))))
 							 (wbbox (bounding-box curves)))
@@ -370,8 +386,9 @@
 						(with-transform ((translation-matrix (- (2d-point-x (line-a wbbox)))
 																								 (- (2d-point-y (line-a wbbox)))))
 							(dolist (curve curves)
-									(mill-curve curve :depth depth)
-									)))))
+								(dolist (curve2 (split-curves curve))
+									(mill-curve curve2 :depth depth)
+									))))))
 
 (defun svg-panel (svg &key depth)
 	(let ((panel (calculate-panel-code `((with-named-pass ("svg") (svg-pass ,svg :depth ,depth))))))

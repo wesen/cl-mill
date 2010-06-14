@@ -2,6 +2,13 @@
 (defstruct 2d-point
   x y)
 
+(defun 2d-point-equal (p1 p2 &optional (epsilon 0))
+	(and (<= (abs (- (2d-point-x p1)
+									 (2d-point-x p2))) epsilon)
+			 (<= (abs (- (2d-point-y p1)
+									 (2d-point-y p2))) epsilon)))
+							 
+
 (defstruct line
   a b)
 

@@ -332,15 +332,28 @@
 	 (bezier-a curve))
 	(t (error "unknown curve elt: ~A" curve))))
 
+(defun curve-end (curve)
+  (cond ((null curve)
+	 (error "empty curve"))
+	((listp curve)
+	 (curve-end (first curve)))
+	((typep curve 'line)
+	 (line-b curve))
+	((typep curve 'arc)
+	 (arc-b curve))
+	((typep curve 'bezier)
+	 (bezier-b curve))
+	(t (error "unknown curve elt: ~A" curve))))
+
 (defun curve-to-arcs (curve)
   (simplify-segments (mapcan #'(lambda (x) (cond ((typep x 'bezier)
-						  (bezier-to-arc x))
-						 (t (list x)))) curve)))
+																									(bezier-to-arc x))
+																								 (t (list x)))) curve)))
 
 (defun simplify-segments (list)
   (loop for seg in list
      if (and (typep seg 'arc) (< (object-length seg) 2))
      collect (make-line :a (arc-a seg) :b (arc-b seg))
-     else
+     else unless (null seg)
      collect seg))
 
