@@ -321,7 +321,7 @@
 
 (defun curve-start (curve)
   (cond ((null curve)
-	 (error "empty curve"))
+				 nil)
 	((listp curve)
 	 (curve-start (first curve)))
 	((typep curve 'line)

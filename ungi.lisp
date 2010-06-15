@@ -10,9 +10,14 @@
 				(goto-abs :x 0 :y 0)
 				(rectangle 20 20)))))
 
-(defun test-ungi-svg ()
+
+;; 5.6 cm radius
+
+(defun test-ungi-svg (svg)
 	(with-program ("ungi-svg-test")
 		(with-named-pass ("svg")
 			(with-tool (*gravier-tool-ungi*)
-				(svg-pass "/Users/manuel/drawing-2.svg")))))
-			
+				(with-transform ((rotation-matrix 90))
+					(with-transform ((scaling-matrix 0.25))
+						(svg-pass svg)))))))
+
