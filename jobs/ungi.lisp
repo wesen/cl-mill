@@ -14,10 +14,10 @@
 ;; 5.6 cm radius
 
 (defun test-ungi-svg (svg)
-	(with-program ("ungi-svg-test")
-		(with-named-pass ("svg")
-			(with-tool (*gravier-tool-ungi*)
-				(with-transform ((rotation-matrix 90))
-					(with-transform ((scaling-matrix 0.25))
-						(svg-pass svg)))))))
+  (with-program ("ungi-svg-test")
+    (with-named-pass ("svg")
+      (with-tool (*gravier-tool-ungi*)
+	(with-transform ((rotation-matrix 90))
+	  (with-transform ((scaling-matrix 0.25))
+	    (svg-pass svg)))))))
 
