@@ -61,6 +61,6 @@
    (:file "pdf")
    (:file "svg")
 
-   (:file "minicommand")
+   #+nil   (:file "minicommand")
 
    ))
