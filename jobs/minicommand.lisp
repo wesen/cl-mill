@@ -6,7 +6,7 @@
 (defvar *frontplate-program*)
 (defvar *frontplate-elements*)
 
-(defparameter *frontplate-depth* 2.6)
+(defparameter *frontplate-depth* 2.8)
 (defvar *frontplate-top* t)
 (defvar *frontplate-side* nil)
 
@@ -43,8 +43,8 @@
 	   (when *frontplate-top*
 	     ;; orig
 	     (progn
-	       (goto-abs :x (- x 7.25) :y (- y 3.75))
-	       (rectangle-inline 14 7.5 :depth *frontplate-depth*)
+	       (goto-abs :x (- x 7.35) :y (- y 3.85))
+	       (rectangle-inline 14.2 7.7 :depth *frontplate-depth*)
 	       )))
 
 	  ((string= package "MAB5SH")
@@ -55,7 +55,8 @@
 	     (with-named-pass ("test")
 	       (drill :x 11.5 :y (- x 1.0) :diameter 2 :depth 1.5))
 	     (with-named-pass ("test3")
-	       (drill :x 11.5 :y (- x 1.0) :diameter 8 :depth *frontplate-depth*))
+               (with-tool (*alu-tool*)
+                 (drill :x 11.5 :y (- x 1.0) :diameter 8 :depth 1.5)))
 	     (with-named-pass ("test2")
 	       (drill :x 11.5 :y (- x 1.0) :diameter 18.5 :depth 1.5))
 	     ))
@@ -72,28 +73,28 @@
 
 	     #-debug
 	     (progn
-	       (goto-abs :x 1.9 :y (+ y 5.3))
-	       (rectangle-inline 10.3 8.6 :depth *frontplate-depth*))))
+	       (goto-abs :x 1.7 :y (+ y 5.3))
+	       (rectangle-inline 10.7 8.6 :depth *frontplate-depth*))))
 	  
 	  ((string= package "DISPLAY-TEXT-C1624A")
 
 	   (when *frontplate-top*
-	     ;; (with-named-pass ("display")
-	     (with-tool (*alu-tool*)
-	       (progn (goto-abs :x (- x 32.6) :y (- y 16.9))
-		      (rectangle-inline 71.5 26.5 :depth *frontplate-depth*))))))))
+             (with-named-pass ("frontplate")
+               (with-tool (*alu-tool*)
+                 (progn (goto-abs :x (- x 32.7) :y (- y 17))
+                        (rectangle-inline 71.7 26.7 :depth (+ 0.0 *frontplate-depth*))))))))))
 
 
 (defparameter *alu-tool-top*
   ;; FUER FRONTPLATTEN
-  (make-instance 'tool :diameter 2 :depth 1.3 :number 8 :feed-xy 500 :feed-z 100))
+  (make-instance 'tool :diameter 2 :depth 0.2 :number 11 :feed-xy 500 :feed-z 100))
 
 (defparameter *alu-tool*
-  (make-instance 'tool :diameter 2 :depth 2.6 :number 8 :feed-xy 500 :feed-z 100))
+  (make-instance 'tool :diameter 2 :depth 0.2 :number 11 :feed-xy 500 :feed-z 100))
 
 ;; FUER FROTPLATTEN
 (defparameter *alu-tool*
-  (make-instance 'tool :diameter 2 :depth 1.3 :number 8 :feed-xy 500 :feed-z 100))
+  (make-instance 'tool :diameter 2 :depth 0.3 :number 11 :feed-xy 500 :feed-z 100))
 
 (defun minicommand-casing-side-top ()
   (let ((tool *alu-tool-top*)
