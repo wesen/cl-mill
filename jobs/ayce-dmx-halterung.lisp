@@ -53,8 +53,4 @@
           #+nil(with-transform ((translation-matrix 187 46))
             (with-transform ((rotation-matrix 135))
               (innere-halterung *grundplate-depth*)))
-            )))
-    
-            
-      
-))
+            )))))
